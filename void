@@ -6,6 +6,7 @@
 # by maxhaesslein
 # www.maxhaesslein.de
 
+from queue import Queue
 import numpy as np
 import cv2
 import pyaudio
@@ -18,6 +19,8 @@ options = {
 	'screenWidth': 1280,
 	'screenHeight': 720,
 	'fps': 30,
+
+    'bufferSize': 512,
 
 	'verbose': True,
 
@@ -72,6 +75,8 @@ audioOptions = {
     'deviceIndex': audioDevice['index'],
     'sampleRate': int(audioDevice['defaultSampleRate']),
     'inputChannels': 1,
+    'hopSize': options['bufferSize'],
+    'winSize': options['bufferSize']*2,
 }
 
 if options['verbose']:
@@ -87,36 +92,74 @@ if options['verbose']:
     print('---------')
     print('')
 
+
+
+# create beat tracking:
+tempoDetection = aubio.tempo(method='default', buf_size=audioOptions['winSize'], hop_size=audioOptions['hopSize'], samplerate=audioOptions['sampleRate'])
+
+beatQueue = Queue()
+
+def readAudioFrames(in_data, frame_count, time_info, status):
+
+    signal = np.frombuffer(in_data, dtype=np.float32)
+
+    beat = tempoDetection(signal)
+    if beat:
+        bpm = tempoDetection.get_bpm()
+        beatQueue.put(bpm)
+
+    return (in_data, pyaudio.paContinue)
+
+pa = pyaudio.PyAudio()
+inputStream = pa.open(format=pyaudio.paFloat32,
+                input=True,
+                channels=audioOptions['inputChannels'],
+                input_device_index=audioOptions['deviceIndex'],
+                frames_per_buffer=options['bufferSize'],
+                rate=audioOptions['sampleRate'],
+                stream_callback=readAudioFrames)
+
+
+
 emptyImage = np.zeros((options['screenHeight'], options['screenWidth'], 3), np.uint8)
 
 targetTime = 1./options['fps']
 frameNumber = 0
+bpm = -1
 
 fpsDisplay = options['fps']
 previousTime = time.time()
 currentTime = time.time()
+
+font = cv2.FONT_HERSHEY_TRIPLEX
 
 # main loop
 while True:
 
     startTime = time.time()
 
+
+    beat = False
+    if beatQueue.qsize() > 0:
+        bpm = beatQueue.get()
+        beat = True
+
+
     frame = emptyImage.copy()
 
+
     # frame count debug text
-    font = cv2.FONT_HERSHEY_TRIPLEX
-    text = str(frameNumber)
+    text = 'frame #'+str(frameNumber)
     fontSize = 1
     fontWidth = 1
     fontColor = (255,255,255)
     textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-    textX = 0
-    textY = options['screenHeight']
+    textX = 1
+    textY = options['screenHeight']-1
     cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
 
     # fps debug text
-    font = cv2.FONT_HERSHEY_TRIPLEX
-    text = str(math.ceil(fpsDisplay))
+    text = str(math.ceil(fpsDisplay))+' fps'
     fontSize = 1
     fontWidth = 1
     if fpsDisplay < options['fps']*0.8:
@@ -129,6 +172,20 @@ while True:
     textX = int((options['screenWidth'] - textSize[0]))
     textY = textSize[1]
     cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    # bpm debug text
+    text = str(round(bpm))+' bpm'
+    fontSize = 4
+    fontWidth = 4
+    fontColor = (255,255,255)
+    if beat:
+        fontColor = (0,0,255)
+    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+    textX = int((options['screenWidth'] - textSize[0])/2)
+    textY = int(options['screenHeight']/2)
+    cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+
 
     cv2.imshow(options['windowName'], frame)
 
@@ -151,6 +208,12 @@ while True:
         print('exiting')
         break
 
+
+
+print('cleaning up ..')
+
+inputStream.stop_stream()
+inputStream.close()
 cv2.destroyAllWindows()
 
 print('bye!')
