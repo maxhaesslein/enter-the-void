@@ -191,19 +191,31 @@ while True:
         fontColor = (0,0,255)
     textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
     textX = int((options['screenWidth'] - textSize[0])/2)
-    textY = int(options['screenHeight']/2)
+    textY = int(options['screenHeight']/3)
+    cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    # fpi debug text
+    text = str(round(framesPerInterval))+' frames per interval'
+    fontSize = 1
+    fontWidth = 1
+    fontColor = (255,255,255)
+    if beat:
+        fontColor = (0,0,255)
+    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+    textX = int((options['screenWidth'] - textSize[0])/2)
+    textY += textSize[1]+50
     cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
 
 
     x = 100
     w = int(options['screenWidth'] - 200)
-    y = int(options['screenHeight'] * 3/4)
+    y = int(options['screenHeight'] * 2/3)
     h = 50
     c = (255,255,255)
     if lateBeat:
         c = (0,0,255)
     lineWidth = 1
-    filledWidth = int((1-(framesUntilNextBeat/framesPerInterval))*w)
+    filledWidth = round((1-(framesUntilNextBeat/framesPerInterval))*w)
     cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
     cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
 
