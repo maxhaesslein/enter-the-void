@@ -126,6 +126,9 @@ emptyImage = np.zeros((options['screenHeight'], options['screenWidth'], 3), np.u
 targetTime = 1./options['fps']
 frameNumber = 0
 bpm = -1
+framesPerInterval = -1
+framesUntilNextBeat = -1
+lateBeat = False
 
 fpsDisplay = options['fps']
 previousTime = time.time()
@@ -138,18 +141,24 @@ while True:
 
     startTime = time.time()
 
+    framesUntilNextBeat -= 1
+    if framesUntilNextBeat < 0:
+        lateBeat = True
+        framesUntilNextBeat = 0
 
     beat = False
     if beatQueue.qsize() > 0:
         bpm = beatQueue.get()
         beat = True
+        framesPerInterval = framesUntilNextBeat = options['fps']*60/bpm
+        lateBeat = False
 
 
     frame = emptyImage.copy()
 
 
     # frame count debug text
-    text = 'frame #'+str(frameNumber)
+    text = 'frame #'+str(frameNumber)+' / next beat at #'+str(int(frameNumber+framesUntilNextBeat))
     fontSize = 1
     fontWidth = 1
     fontColor = (255,255,255)
@@ -184,6 +193,19 @@ while True:
     textX = int((options['screenWidth'] - textSize[0])/2)
     textY = int(options['screenHeight']/2)
     cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+
+    x = 100
+    w = int(options['screenWidth'] - 200)
+    y = int(options['screenHeight'] * 3/4)
+    h = 50
+    c = (255,255,255)
+    if lateBeat:
+        c = (0,0,255)
+    lineWidth = 1
+    filledWidth = int((1-(framesUntilNextBeat/framesPerInterval))*w)
+    cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
+    cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
 
 
 
