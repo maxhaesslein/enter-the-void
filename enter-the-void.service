@@ -1,0 +1,14 @@
+[Unit]
+Description=Enter the Void
+
+[Service]
+Environment=DISPLAY=:0
+ExecStart=%h/enter-the-void/start
+Restart=always
+RestartSec=5s
+KillMode=process
+TimeoutSec=infinity
+
+[Install]
+WantedBy=default.target
+

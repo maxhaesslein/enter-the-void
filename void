@@ -1,0 +1,115 @@
+#!/usr/bin/python
+
+
+# Enter the Void
+# v1, 2023
+# by maxhaesslein
+# www.maxhaesslein.de
+
+import numpy as np
+import cv2
+import pyaudio
+import aubio
+import sys
+import time
+
+options = {
+	'screenWidth': 1280,
+	'screenHeight': 720,
+	'fps': 60,
+
+	'verbose': True,
+
+	'windowName': 'Enter the Void',
+
+    'audioDevice': 'auto',
+
+}
+
+
+# setup window
+cv2.namedWindow( options['windowName'], cv2.WINDOW_NORMAL )
+cv2.resizeWindow( options['windowName'], options['screenWidth'], options['screenHeight'] )
+cv2.setWindowProperty( options['windowName'], cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN )
+
+# display startup image
+startupImage = np.zeros((options['screenHeight'], options['screenWidth'], 3), np.uint8)
+font = cv2.FONT_HERSHEY_TRIPLEX
+text = 'loading ...'
+fontSize = 1
+fontWidth = 1
+fontColor = (255,255,255)
+
+textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+textX = int((options['screenWidth'] - textSize[0]) / 2)
+textY = int((options['screenHeight'] - textSize[1]*2))
+cv2.putText( img=startupImage, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+cv2.imshow(options['windowName'], startupImage)
+cv2.waitKey(60)
+
+# get audio input options
+pa = pyaudio.PyAudio()
+if options['verbose']:
+    print("listing microphones")
+    for i in range(pa.get_device_count()):
+        dev = pa.get_device_info_by_index(i)
+        print(i,dev['name'],dev['maxInputChannels'])
+        if options['audioDevice'] == 'auto' and dev['maxInputChannels'] > 0:
+            options['audioDevice'] = i
+            print('  automatically set audio device to '+str(i))
+if pa.get_device_count() < options['audioDevice']:
+    print('audio device index is out of range (found '+str(pa.get_device_count())+' audio devices, requested #'+str(options['audioDevice'])+')')
+    sys.exit()
+audioDevice = pa.get_device_info_by_index(options['audioDevice'])
+if audioDevice['maxInputChannels'] <= 0:
+    print('audio device has no input channels! aborting')
+    print('(use "arecord -l" to check available devices)')
+    sys.exit()
+audioOptions = {
+    'deviceIndex': audioDevice['index'],
+    'sampleRate': int(audioDevice['defaultSampleRate']),
+    'inputChannels': 1,
+}
+
+if options['verbose']:
+    print('')
+    print('---------')
+    print('')
+    print('-- options --')
+    print(options)
+    print('')
+    print('-- audio options --')
+    print(audioOptions)
+    print('')
+    print('---------')
+    print('')
+
+
+targetTime = 1./options['fps']
+
+# main loop
+while True:
+
+    startTime = time.time()
+
+
+    # cv2.imshow(options['windowName'], frame)
+
+    usedTime = time.time() - startTime
+    timeLeft = targetTime-usedTime
+    sleepTime = int(timeLeft*1000)
+    if sleepTime < 1:
+        sleepTime = 1
+
+    key = cv2.waitKey(sleepTime)
+
+    if key == 27: # escape
+        print('exiting')
+        break
+
+
+cv2.destroyAllWindows()
+
+print('bye!')
+
