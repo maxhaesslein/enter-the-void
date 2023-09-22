@@ -12,17 +12,20 @@ import pyaudio
 import aubio
 import sys
 import time
+import math
 
 options = {
 	'screenWidth': 1280,
 	'screenHeight': 720,
-	'fps': 60,
+	'fps': 30,
 
 	'verbose': True,
 
 	'windowName': 'Enter the Void',
 
     'audioDevice': 'auto',
+
+    'fpsSmoothing': 0.6, # this smoothes only the fps _debug display_, NOT the real fps
 
 }
 
@@ -39,7 +42,6 @@ text = 'loading ...'
 fontSize = 1
 fontWidth = 1
 fontColor = (255,255,255)
-
 textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
 textX = int((options['screenWidth'] - textSize[0]) / 2)
 textY = int((options['screenHeight'] - textSize[1]*2))
@@ -85,16 +87,57 @@ if options['verbose']:
     print('---------')
     print('')
 
+emptyImage = np.zeros((options['screenHeight'], options['screenWidth'], 3), np.uint8)
 
 targetTime = 1./options['fps']
+frameNumber = 0
+
+fpsDisplay = options['fps']
+previousTime = time.time()
+currentTime = time.time()
 
 # main loop
 while True:
 
     startTime = time.time()
 
+    frame = emptyImage.copy()
 
-    # cv2.imshow(options['windowName'], frame)
+    # frame count debug text
+    font = cv2.FONT_HERSHEY_TRIPLEX
+    text = str(frameNumber)
+    fontSize = 1
+    fontWidth = 1
+    fontColor = (255,255,255)
+    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+    textX = 0
+    textY = options['screenHeight']
+    cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    # fps debug text
+    font = cv2.FONT_HERSHEY_TRIPLEX
+    text = str(math.ceil(fpsDisplay))
+    fontSize = 1
+    fontWidth = 1
+    if fpsDisplay < options['fps']*0.8:
+        fontColor = (0,0,255)
+    elif fpsDisplay < options['fps']*0.9:
+        fontColor = (0,255,255)
+    else:
+        fontColor = (0,255,0)
+    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+    textX = int((options['screenWidth'] - textSize[0]))
+    textY = textSize[1]
+    cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    cv2.imshow(options['windowName'], frame)
+
+    frameNumber += 1
+
+    previousTime, currentTime = currentTime, time.time()
+    currentFps = round(1./(currentTime-previousTime))
+    fpsDisplay = (fpsDisplay * options['fpsSmoothing']) + (currentFps * (1.0-options['fpsSmoothing']))
+
 
     usedTime = time.time() - startTime
     timeLeft = targetTime-usedTime
@@ -107,7 +150,6 @@ while True:
     if key == 27: # escape
         print('exiting')
         break
-
 
 cv2.destroyAllWindows()
 
