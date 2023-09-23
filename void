@@ -130,6 +130,7 @@ framesPerInterval = -1
 framesUntilNextBeat = -1
 lateBeat = False
 
+fps = options['fps']
 fpsDisplay = options['fps']
 previousTime = time.time()
 currentTime = time.time()
@@ -150,7 +151,7 @@ while True:
     if beatQueue.qsize() > 0:
         bpm = beatQueue.get()
         beat = True
-        framesPerInterval = framesUntilNextBeat = options['fps']*60/bpm
+        framesPerInterval = framesUntilNextBeat = fps*60/bpm
         lateBeat = False
 
 
@@ -226,8 +227,8 @@ while True:
     frameNumber += 1
 
     previousTime, currentTime = currentTime, time.time()
-    currentFps = round(1./(currentTime-previousTime))
-    fpsDisplay = (fpsDisplay * options['fpsSmoothing']) + (currentFps * (1.0-options['fpsSmoothing']))
+    fps = round(1./(currentTime-previousTime))
+    fpsDisplay = (fpsDisplay * options['fpsSmoothing']) + (fps * (1.0-options['fpsSmoothing']))
 
 
     usedTime = time.time() - startTime
