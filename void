@@ -104,7 +104,7 @@ class AudioProcessor():
 
         self.fpsMeasurement = options['fps']
         self.previousTime = self.currentTime = time.time()
-        self.fpsSmoothing = options['fpsSmoothing']
+        self.fpsSmoothing = 0.9
 
         self.beatQueue = Queue()
         self.pitchQueue = Queue()
@@ -209,6 +209,8 @@ volumeBuffer = np.zeros(options['fps']*10) # 10 seconds worth of frames
 volumeBufferIndex = 0
 globalVolume = 0
 globalAverageVolume = 0
+globalVolumeDisplaySmoothing = 0.7
+volumePercentMeasurement = 1
 
 fps = options['fps']
 fpsDisplay = options['fps']
@@ -263,7 +265,7 @@ while True:
     cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
 
     # fps debug text
-    text = str(math.ceil(fpsDisplay))+' fps'
+    text = str(math.ceil(fpsDisplay))+' main fps'
     fontSize = 1
     fontWidth = 1
     if fpsDisplay < options['fps']*0.8:
@@ -364,7 +366,8 @@ while True:
         volumePercent = 1
     if volumePercent > 2:
         volumePercent = 2
-    filledWidth = midW*(volumePercent-1)
+    volumePercentMeasurement = (volumePercentMeasurement*globalVolumeDisplaySmoothing) + (volumePercent * (1.0-globalVolumeDisplaySmoothing))
+    filledWidth = midW*(volumePercentMeasurement-1)
     cv2.rectangle( frame, (x+midW,y), (x+midW+int(filledWidth), y+h), c, -1 )
     cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
     text = 'volume'
