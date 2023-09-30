@@ -172,6 +172,13 @@ class AudioProcessor():
             return self.pitchQueue.get()
         return False
 
+    def getPeaks(self):
+        return self.peakBuffer, self.peakBufferBeat, self.peakBufferIndex
+
+    def getVolume(self):
+        volume = np.sum(self.volumeBuffer)
+        return volume
+
     def stop(self):
         self.stream.stop_stream()
         self.stream.close()
@@ -186,6 +193,11 @@ framesUntilNextBeat = -1
 lateBeat = False
 pitchValue = 0
 oldPitchValue = 0
+
+volumeBuffer = np.zeros(options['fps']*10) # 10 seconds worth of frames
+volumeBufferIndex = 0
+globalVolume = 0
+globalAverageVolume = 0
 
 fps = options['fps']
 fpsDisplay = options['fps']
@@ -219,6 +231,13 @@ while True:
     pitch = audioProcessor.getPitch()
     if pitch and pitch > 0:
         pitchValue = pitch
+
+    globalVolume = audioProcessor.getVolume()
+    volumeBuffer[volumeBufferIndex] = globalVolume
+    volumeBufferIndex += 1
+    if volumeBufferIndex >= len(volumeBuffer):
+        volumeBufferIndex = 0
+    globalAverageVolume = np.sum(volumeBuffer)/len(volumeBuffer)
 
     frame = np.zeros((options['screenHeight'], options['screenWidth'], 3), np.uint8)
 
@@ -303,6 +322,30 @@ while True:
     cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
     cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
     text = 'pitch'
+    fontSize = 1
+    fontWidth = 1
+    fontColor = (255,255,255)
+    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+    cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    # print Volume
+    y += h + 20
+    h = 30
+    c = (255,255,255)
+    cB = (0,0,0)
+    lineWidth = 1
+    midW= int(w/2)
+    scale = 4
+    if globalAverageVolume > 0:
+        volumePercent = globalVolume/globalAverageVolume
+    else:
+        volumePercent = 1
+    if volumePercent > 2:
+        volumePercent = 2
+    filledWidth = midW*(volumePercent-1)
+    cv2.rectangle( frame, (x+midW,y), (x+midW+int(filledWidth), y+h), c, -1 )
+    cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
+    text = 'volume'
     fontSize = 1
     fontWidth = 1
     fontColor = (255,255,255)
