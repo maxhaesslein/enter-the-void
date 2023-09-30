@@ -97,22 +97,16 @@ if options['verbose']:
 
 # create beat tracking:
 tempoDetection = aubio.tempo(method='default', buf_size=audioOptions['winSize'], hop_size=audioOptions['hopSize'], samplerate=audioOptions['sampleRate'])
-onsetDetection = aubio.onset(method='default', buf_size=audioOptions['winSize'], hop_size=audioOptions['hopSize'], samplerate=audioOptions['sampleRate'])
 pitchDetection = aubio.pitch(method='default', buf_size=audioOptions['winSize'], hop_size=audioOptions['hopSize'], samplerate=audioOptions['sampleRate'])
 
 pitchDetection.set_unit('cent')
 
 beatQueue = Queue()
-onsetQueue = Queue()
 pitchQueue = Queue()
 
 def readAudioFrames(in_data, frame_count, time_info, status):
 
     signal = np.frombuffer(in_data, dtype=np.float32)
-
-    onset = onsetDetection(signal)
-    if onset:
-        onsetQueue.put(onset)
 
     beat = tempoDetection(signal)
     if beat:
@@ -144,8 +138,6 @@ bpm = -1
 framesPerInterval = -1
 framesUntilNextBeat = -1
 lateBeat = False
-onsetValue = 0
-onsetDecay = 0.1
 pitchValue = 0
 oldPitchValue = 0
 
@@ -172,17 +164,6 @@ while True:
         beat = True
         framesPerInterval = framesUntilNextBeat = fps*60/bpm
         lateBeat = False
-
-    onset = 0
-    if onsetQueue.qsize() > 0:
-        onset = onsetQueue.get()
-        if float(onset) > 0:
-            onsetValue = float(onset)
-
-    if onsetValue > 0:
-        onsetValue -= onsetDecay
-        if onsetValue < 0:
-            onsetValue = 0
 
     if pitchValue > 0:
         oldPitchValue = pitchValue
@@ -277,21 +258,6 @@ while True:
     cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
     cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
     text = 'pitch'
-    fontSize = 1
-    fontWidth = 1
-    fontColor = (255,255,255)
-    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-    cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
-
-    # print onset
-    y += h + 20
-    h = 30
-    c = (255,255,255)
-    lineWidth = 1
-    filledWidth = int((onsetValue)*w/2)
-    cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
-    cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
-    text = 'onset'
     fontSize = 1
     fontWidth = 1
     fontColor = (255,255,255)
