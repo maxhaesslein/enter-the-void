@@ -102,6 +102,10 @@ class AudioProcessor():
 
     def __init__(self):
 
+        self.fpsMeasurement = options['fps']
+        self.previousTime = self.currentTime = time.time()
+        self.fpsSmoothing = options['fpsSmoothing']
+
         self.beatQueue = Queue()
         self.pitchQueue = Queue()
 
@@ -160,6 +164,10 @@ class AudioProcessor():
         if self.volumeBufferIndex >= len(self.volumeBuffer):
             self.volumeBufferIndex = 0
 
+        self.previousTime, self.currentTime = self.currentTime, time.time()
+        fps = math.ceil(1./(self.currentTime-self.previousTime))
+        self.fpsMeasurement = (self.fpsMeasurement*self.fpsSmoothing) + (fps*(1.0-self.fpsSmoothing))
+
         return (in_data, pyaudio.paContinue)
 
     def getBeat(self):
@@ -178,6 +186,9 @@ class AudioProcessor():
     def getVolume(self):
         volume = np.sum(self.volumeBuffer)
         return volume
+
+    def getFps(self):
+        return self.fpsMeasurement
 
     def stop(self):
         self.stream.stop_stream()
@@ -264,6 +275,17 @@ while True:
     textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
     textX = int((options['screenWidth'] - textSize[0]))
     textY = textSize[1]
+    cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    # audioProcessor fps debug text
+    audioFps = audioProcessor.getFps()
+    text = str(math.ceil(audioFps))+' audio fps'
+    fontSize = 1
+    fontWidth = 1
+    fontColor = (255,255,255)
+    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+    textX = int((options['screenWidth'] - textSize[0]))
+    textY += textSize[1] + 20
     cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
 
     # bpm debug text
