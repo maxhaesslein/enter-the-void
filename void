@@ -19,6 +19,7 @@ import math
 options = {
 	'screenWidth': 1280,
 	'screenHeight': 720,
+
 	'fps': 30,
 
     'bufferSize': 512,
@@ -177,9 +178,6 @@ class AudioProcessor():
         self.audio.terminate()
 
 
-
-emptyImage = np.zeros((options['screenHeight'], options['screenWidth'], 3), np.uint8)
-
 targetTime = 1./options['fps']
 frameNumber = 0
 bpm = -1
@@ -222,9 +220,7 @@ while True:
     if pitch and pitch > 0:
         pitchValue = pitch
 
-
-    frame = emptyImage.copy()
-
+    frame = np.zeros((options['screenHeight'], options['screenWidth'], 3), np.uint8)
 
     # frame count debug text
     text = 'frame #'+str(frameNumber)+' / next beat at #'+str(int(frameNumber+framesUntilNextBeat))
