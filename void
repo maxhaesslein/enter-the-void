@@ -231,6 +231,8 @@ currentTime = time.time()
 
 font = cv2.FONT_HERSHEY_TRIPLEX
 
+verbose = False
+
 audioProcessor = AudioProcessor()
 
 # main loop
@@ -283,7 +285,7 @@ while True:
         textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
         textX = 1
         textY = options['screenHeight']-1
-        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
 
     step3Time = time.time()-stepTime
     stepTime = time.time()
@@ -303,7 +305,7 @@ while True:
         textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
         textX = int((options['screenWidth'] - textSize[0]))
         textY = textSize[1]
-        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
 
     step4Time = time.time()-stepTime
     stepTime = time.time()
@@ -318,7 +320,7 @@ while True:
         textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
         textX = int((options['screenWidth'] - textSize[0]))
         textY += textSize[1] + 20
-        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
 
     step5Time = time.time()-stepTime
     stepTime = time.time()
@@ -327,14 +329,14 @@ while True:
     textY = int(options['screenHeight']/5)
     if debugDisplay['bpm']:
         text = str(round(bpm))+' bpm'
-        fontSize = 1
-        fontWidth = 1
+        fontSize = 3
+        fontWidth = 3
         fontColor = (255,255,255)
         if beat:
             fontColor = (0,0,255)
         textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
         textX = int((options['screenWidth'] - textSize[0])/2)
-        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
 
     step6Time = time.time()-stepTime
     stepTime = time.time()
@@ -349,8 +351,8 @@ while True:
             fontColor = (0,0,255)
         textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
         textX = int((options['screenWidth'] - textSize[0])/2)
-        textY += textSize[1]+20
-        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+        textY += textSize[1]+30
+        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
 
     step7Time = time.time()-stepTime
     stepTime = time.time()
@@ -374,7 +376,7 @@ while True:
         fontWidth = 1
         fontColor = (255,255,255)
         textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-        cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+        cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
 
     step8Time = time.time()-stepTime
     stepTime = time.time()
@@ -395,7 +397,7 @@ while True:
         fontWidth = 1
         fontColor = (255,255,255)
         textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-        cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+        cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
 
     step9Time = time.time()-stepTime
     stepTime = time.time()
@@ -423,7 +425,7 @@ while True:
         fontWidth = 1
         fontColor = (255,255,255)
         textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-        cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+        cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
 
     step10Time = time.time()-stepTime
     stepTime = time.time()
@@ -466,20 +468,21 @@ while True:
     step12Time = time.time()-stepTime
     stepTime = time.time()
 
-    step1Time = '01: '+str(int(step1Time*100000))
-    step2Time = '/ 02: '+str(int(step2Time*100000))
-    step3Time = '/ 03: '+str(int(step3Time*100000))
-    step4Time = '/ 04: '+str(int(step4Time*100000))
-    step5Time = '/ 05: '+str(int(step5Time*100000))
-    step6Time = '/ 06: '+str(int(step6Time*100000))
-    step7Time = '/ 07: '+str(int(step7Time*100000))
-    step8Time = '/ 08: '+str(int(step8Time*100000))
-    step9Time = '/ 09: '+str(int(step9Time*100000))
-    step10Time = '/ 10: '+str(int(step10Time*100000))
-    step11Time = '/ 11: '+str(int(step11Time*100000))
-    step12Time = '/ 12: '+str(int(step12Time*100000))
+    if verbose:
+        step1Time = '01: '+str(int(step1Time*100000))
+        step2Time = '/ 02: '+str(int(step2Time*100000))
+        step3Time = '/ 03: '+str(int(step3Time*100000))
+        step4Time = '/ 04: '+str(int(step4Time*100000))
+        step5Time = '/ 05: '+str(int(step5Time*100000))
+        step6Time = '/ 06: '+str(int(step6Time*100000))
+        step7Time = '/ 07: '+str(int(step7Time*100000))
+        step8Time = '/ 08: '+str(int(step8Time*100000))
+        step9Time = '/ 09: '+str(int(step9Time*100000))
+        step10Time = '/ 10: '+str(int(step10Time*100000))
+        step11Time = '/ 11: '+str(int(step11Time*100000))
+        step12Time = '/ 12: '+str(int(step12Time*100000))
 
-    print(step1Time, step2Time, step3Time, step4Time, step5Time, step6Time, step7Time, step8Time, step9Time, step10Time, step11Time, step12Time)
+        print(step1Time, step2Time, step3Time, step4Time, step5Time, step6Time, step7Time, step8Time, step9Time, step10Time, step11Time, step12Time)
 
     frameNumber += 1
 
@@ -499,6 +502,7 @@ while True:
     if key == 27: # escape
         print('exiting')
         break
+
     elif key&0xFF == ord('q'):
         debugDisplay['frameCount'] = not debugDisplay['frameCount']
     elif key&0xFF == ord('w'):
@@ -517,6 +521,9 @@ while True:
         debugDisplay['volume'] = not debugDisplay['volume']
     elif key&0xFF == ord('o'):
         debugDisplay['peaks'] = not debugDisplay['peaks']
+
+    elif key&0xFF == ord('v'):
+        verbose = not verbose
 
 
 print('cleaning up ..')
