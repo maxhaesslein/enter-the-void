@@ -32,6 +32,8 @@ options = {
     'audioDevice': 'auto',
     'audioDisplayScaling': 3000,
 
+    'silenceThreshold': 0.18,
+
 }
 
 debugDisplay = {
@@ -266,6 +268,10 @@ while True:
         volumeBufferIndex = 0
     globalAverageVolume = np.sum(volumeBuffer)/len(volumeBuffer)
 
+    silence = False
+    if globalVolume < globalAverageVolume * options['silenceThreshold']:
+        silence = True
+
     step1Time = time.time()-stepTime
     stepTime = time.time()
 
@@ -404,6 +410,8 @@ while True:
     if debugDisplay['volume']:
         y += h + 20
         c = (255,255,255)
+        if silence:
+            c = (0,0,255)
         cB = (0,0,0)
         lineWidth = 1
         midW= int(w/2)
@@ -414,10 +422,12 @@ while True:
             volumePercent = 1
         if volumePercent > 2:
             volumePercent = 2
+        silenceMarker = round(w/2*options['silenceThreshold'])
         volumePercentMeasurement = (volumePercentMeasurement*globalVolumeDisplaySmoothing) + (volumePercent * (1.0-globalVolumeDisplaySmoothing))
         filledWidth = midW*(volumePercentMeasurement-1)
         cv2.rectangle( frame, (x+midW,y), (x+midW+int(filledWidth), y+h), c, -1 )
         cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
+        cv2.rectangle( frame, (x+silenceMarker,y), (x+silenceMarker+1, y+h), c, lineWidth )
         text = 'volume'
         fontSize = 1
         fontWidth = 1
