@@ -7,6 +7,7 @@
 # www.maxhaesslein.de
 
 from queue import Queue
+from threading import Thread
 import numpy as np
 import cv2
 import pyaudio
@@ -28,6 +29,7 @@ options = {
 	'windowName': 'Enter the Void',
 
     'audioDevice': 'auto',
+    'audioDisplayScaling': 3000,
 
     'fpsSmoothing': 0.6, # this smoothes only the fps _debug display_, NOT the real fps
 
@@ -95,38 +97,84 @@ if options['verbose']:
 
 
 
-# create beat tracking:
-tempoDetection = aubio.tempo(method='default', buf_size=audioOptions['winSize'], hop_size=audioOptions['hopSize'], samplerate=audioOptions['sampleRate'])
-pitchDetection = aubio.pitch(method='default', buf_size=audioOptions['winSize'], hop_size=audioOptions['hopSize'], samplerate=audioOptions['sampleRate'])
+class AudioProcessor():
 
-pitchDetection.set_unit('cent')
+    def __init__(self):
 
-beatQueue = Queue()
-pitchQueue = Queue()
+        self.beatQueue = Queue()
+        self.pitchQueue = Queue()
 
-def readAudioFrames(in_data, frame_count, time_info, status):
+        peakBufferSize = int(audioOptions['sampleRate']/options['bufferSize']) # one second worth of bufferSizes
+        self.peakBuffer = np.zeros(peakBufferSize)
+        self.peakBufferBeat = np.zeros(peakBufferSize)
+        self.peakBufferIndex = 0
 
-    signal = np.frombuffer(in_data, dtype=np.float32)
+        volumeBufferSize = int((audioOptions['sampleRate']/options['bufferSize'])/options['fps']) # one frame worth of bufferSizes
+        if volumeBufferSize < 1:
+            volumeBufferSize = 1
+        self.volumeBuffer = np.zeros(volumeBufferSize)
+        self.volumeBufferIndex = 0
 
-    beat = tempoDetection(signal)
-    if beat:
-        bpm = tempoDetection.get_bpm()
-        beatQueue.put(bpm)
+        self.tempoDetection = aubio.tempo(method='default', buf_size=audioOptions['winSize'], hop_size=audioOptions['hopSize'], samplerate=audioOptions['sampleRate'])
 
-    pitch = pitchDetection(signal)
-    if pitch[0] != 0:
-        pitchQueue.put(pitch[0])
+        self.pitchDetection = aubio.pitch(method='default', buf_size=audioOptions['winSize'], hop_size=audioOptions['hopSize'], samplerate=audioOptions['sampleRate'])
+        self.pitchDetection.set_unit('cent')
 
-    return (in_data, pyaudio.paContinue)
+        self.audio = pyaudio.PyAudio()
+        self.stream = self.audio.open(format=pyaudio.paFloat32,
+                    input=True,
+                    channels=audioOptions['inputChannels'],
+                    input_device_index=audioOptions['deviceIndex'],
+                    frames_per_buffer=options['bufferSize'],
+                    rate=audioOptions['sampleRate'],
+                    stream_callback=self.readAudioFrames)
 
-pa = pyaudio.PyAudio()
-inputStream = pa.open(format=pyaudio.paFloat32,
-                input=True,
-                channels=audioOptions['inputChannels'],
-                input_device_index=audioOptions['deviceIndex'],
-                frames_per_buffer=options['bufferSize'],
-                rate=audioOptions['sampleRate'],
-                stream_callback=readAudioFrames)
+
+    def readAudioFrames(self, in_data, frame_count, time_info, status):
+
+        signal = np.frombuffer(in_data, dtype=np.float32)
+
+        volume = np.sum(signal**2)/len(signal)
+
+        beat = self.tempoDetection(signal)
+        if beat:
+            bpm = self.tempoDetection.get_bpm()
+            self.beatQueue.put(bpm)
+
+        pitch = self.pitchDetection(signal)
+        if pitch[0] != 0:
+            self.pitchQueue.put(pitch[0])
+
+        peak = np.abs(np.max(signal)-np.min(signal))
+        self.peakBuffer[self.peakBufferIndex] = peak*options['audioDisplayScaling']
+        self.peakBufferBeat[self.peakBufferIndex] = beat
+
+        self.peakBufferIndex += 1
+        if self.peakBufferIndex >= len(self.peakBuffer):
+            self.peakBufferIndex = 0
+
+        self.volumeBuffer[self.volumeBufferIndex] = volume
+
+        self.volumeBufferIndex += 1
+        if self.volumeBufferIndex >= len(self.volumeBuffer):
+            self.volumeBufferIndex = 0
+
+        return (in_data, pyaudio.paContinue)
+
+    def getBeat(self):
+        if self.beatQueue.qsize() > 0:
+            return self.beatQueue.get()
+        return False
+
+    def getPitch(self):
+        if self.pitchQueue.qsize() > 0:
+            return self.pitchQueue.get()
+        return False
+
+    def stop(self):
+        self.stream.stop_stream()
+        self.stream.close()
+        self.audio.terminate()
 
 
 
@@ -148,6 +196,8 @@ currentTime = time.time()
 
 font = cv2.FONT_HERSHEY_TRIPLEX
 
+audioProcessor = AudioProcessor()
+
 # main loop
 while True:
 
@@ -158,9 +208,9 @@ while True:
         lateBeat = True
         framesUntilNextBeat = 0
 
-    beat = False
-    if beatQueue.qsize() > 0:
-        bpm = beatQueue.get()
+    beat = audioProcessor.getBeat()
+    if beat:
+        bpm = beat
         beat = True
         framesPerInterval = framesUntilNextBeat = fps*60/bpm
         lateBeat = False
@@ -168,10 +218,9 @@ while True:
     if pitchValue > 0:
         oldPitchValue = pitchValue
     pitchValue = 0
-    if pitchQueue.qsize() > 0:
-        pitch = pitchQueue.get()
-        if pitch > 0:
-            pitchValue = pitch
+    pitch = audioProcessor.getPitch()
+    if pitch and pitch > 0:
+        pitchValue = pitch
 
 
     frame = emptyImage.copy()
@@ -290,8 +339,7 @@ while True:
 
 print('cleaning up ..')
 
-inputStream.stop_stream()
-inputStream.close()
+audioProcessor.stop()
 cv2.destroyAllWindows()
 
 print('bye!')
