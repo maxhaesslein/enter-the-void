@@ -352,6 +352,35 @@ while True:
     textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
     cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
 
+    # print peaks
+    data, beatData, index = audioProcessor.getPeaks()
+    index -= 1
+    if index < 0:
+        index = options['fps']-1
+
+    w = math.ceil(options['screenWidth']/len(data))
+    x = options['screenWidth']-w
+    y = int(options['screenHeight']*3/5)
+
+    for i in range(len(data)):
+        h = int(data[index])
+        o = beatData[index]
+
+        color = (255,255,255)
+        if o:
+            color = (0,0,255)
+
+        cv2.rectangle( frame, (x,y), (x+w, y-h), color, -1 )
+
+        x += w
+
+        index += 1
+        if index >= len(data):
+            index = 0
+        if x >= options['screenWidth']:
+            x = 0
+
+
 
     cv2.imshow(options['windowName'], frame)
 
