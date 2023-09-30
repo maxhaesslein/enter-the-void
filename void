@@ -100,6 +100,8 @@ tempoDetection = aubio.tempo(method='default', buf_size=audioOptions['winSize'],
 onsetDetection = aubio.onset(method='default', buf_size=audioOptions['winSize'], hop_size=audioOptions['hopSize'], samplerate=audioOptions['sampleRate'])
 pitchDetection = aubio.pitch(method='default', buf_size=audioOptions['winSize'], hop_size=audioOptions['hopSize'], samplerate=audioOptions['sampleRate'])
 
+pitchDetection.set_unit('cent')
+
 beatQueue = Queue()
 onsetQueue = Queue()
 pitchQueue = Queue()
@@ -145,6 +147,7 @@ lateBeat = False
 onsetValue = 0
 onsetDecay = 0.1
 pitchValue = 0
+oldPitchValue = 0
 
 fps = options['fps']
 fpsDisplay = options['fps']
@@ -181,6 +184,9 @@ while True:
         if onsetValue < 0:
             onsetValue = 0
 
+    if pitchValue > 0:
+        oldPitchValue = pitchValue
+    pitchValue = 0
     if pitchQueue.qsize() > 0:
         pitch = pitchQueue.get()
         if pitch > 0:
@@ -259,6 +265,24 @@ while True:
     textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
     cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
 
+    # print pitch
+    y += h + 20
+    h = 30
+    c = (255,255,255)
+    cOld = (50,50,50)
+    lineWidth = 1
+    filledWidth = int((pitchValue)*w/100)
+    filledWidthOld = int((oldPitchValue)*w/100)
+    cv2.rectangle( frame, (x,y), (x+filledWidthOld, y+h), cOld, -1 )
+    cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
+    cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
+    text = 'pitch'
+    fontSize = 1
+    fontWidth = 1
+    fontColor = (255,255,255)
+    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+    cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
     # print onset
     y += h + 20
     h = 30
@@ -268,21 +292,6 @@ while True:
     cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
     cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
     text = 'onset'
-    fontSize = 1
-    fontWidth = 1
-    fontColor = (255,255,255)
-    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-    cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
-
-    # print pitch
-    y += h + 20
-    h = 30
-    c = (255,255,255)
-    lineWidth = 1
-    filledWidth = int((pitchValue)*w/4000)
-    cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
-    cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
-    text = 'pitch'
     fontSize = 1
     fontWidth = 1
     fontColor = (255,255,255)
