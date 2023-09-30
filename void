@@ -32,8 +32,6 @@ options = {
     'audioDevice': 'auto',
     'audioDisplayScaling': 3000,
 
-    'fpsSmoothing': 0.6, # this smoothes only the fps _debug display_, NOT the real fps
-
 }
 
 debugDisplay = {
@@ -351,7 +349,7 @@ while True:
             fontColor = (0,0,255)
         textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
         textX = int((options['screenWidth'] - textSize[0])/2)
-        textY += textSize[1]+30
+        textY += textSize[1]+40
         cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
 
     step7Time = time.time()-stepTime
@@ -488,7 +486,8 @@ while True:
 
     previousTime, currentTime = currentTime, time.time()
     fps = round(1./(currentTime-previousTime))
-    fpsDisplay = (fpsDisplay * options['fpsSmoothing']) + (fps * (1.0-options['fpsSmoothing']))
+    fpsSmoothing = 0.6
+    fpsDisplay = (fpsDisplay * fpsSmoothing) + (fps * (1.0-fpsSmoothing))
 
 
     usedTime = time.time() - startTime
