@@ -36,6 +36,18 @@ options = {
 
 }
 
+debugDisplay = {
+    'frameCount': True,
+    'fps': True,
+    'audioFps': True,
+    'bpm': True,
+    'interval': True,
+    'progress': True,
+    'pitch': True,
+    'volume': True,
+    'peaks': True,
+}
+
 
 # setup window
 cv2.namedWindow( options['windowName'], cv2.WINDOW_NORMAL )
@@ -226,6 +238,8 @@ while True:
 
     startTime = time.time()
 
+    stepTime = time.time()
+
     framesUntilNextBeat -= 1
     if framesUntilNextBeat < 0:
         lateBeat = True
@@ -252,162 +266,220 @@ while True:
         volumeBufferIndex = 0
     globalAverageVolume = np.sum(volumeBuffer)/len(volumeBuffer)
 
+    step1Time = time.time()-stepTime
+    stepTime = time.time()
+
     frame = np.zeros((options['screenHeight'], options['screenWidth'], 3), np.uint8)
 
+    step2Time = time.time()-stepTime
+    stepTime = time.time()
+
     # frame count debug text
-    text = 'frame #'+str(frameNumber)+' / next beat at #'+str(int(frameNumber+framesUntilNextBeat))
-    fontSize = 1
-    fontWidth = 1
-    fontColor = (255,255,255)
-    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-    textX = 1
-    textY = options['screenHeight']-1
-    cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+    if debugDisplay['frameCount']:
+        text = 'frame #'+str(frameNumber)+' / next beat at #'+str(int(frameNumber+framesUntilNextBeat))
+        fontSize = 1
+        fontWidth = 1
+        fontColor = (255,255,255)
+        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+        textX = 1
+        textY = options['screenHeight']-1
+        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    step3Time = time.time()-stepTime
+    stepTime = time.time()
 
     # fps debug text
-    text = str(math.ceil(fpsDisplay))+' main fps'
-    fontSize = 1
-    fontWidth = 1
-    if fpsDisplay < options['fps']*0.8:
-        fontColor = (0,0,255)
-    elif fpsDisplay < options['fps']*0.9:
-        fontColor = (0,255,255)
-    else:
-        fontColor = (0,255,0)
-    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-    textX = int((options['screenWidth'] - textSize[0]))
-    textY = textSize[1]
-    cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+    textY = 0
+    if debugDisplay['fps']:
+        text = str(math.ceil(fpsDisplay))+' main fps'
+        fontSize = 1
+        fontWidth = 1
+        if fpsDisplay < options['fps']*0.8:
+            fontColor = (0,0,255)
+        elif fpsDisplay < options['fps']*0.9:
+            fontColor = (0,255,255)
+        else:
+            fontColor = (0,255,0)
+        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+        textX = int((options['screenWidth'] - textSize[0]))
+        textY = textSize[1]
+        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    step4Time = time.time()-stepTime
+    stepTime = time.time()
 
     # audioProcessor fps debug text
-    audioFps = audioProcessor.getFps()
-    text = str(math.ceil(audioFps))+' audio fps'
-    fontSize = 1
-    fontWidth = 1
-    fontColor = (255,255,255)
-    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-    textX = int((options['screenWidth'] - textSize[0]))
-    textY += textSize[1] + 20
-    cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+    if debugDisplay['audioFps']:
+        audioFps = audioProcessor.getFps()
+        text = str(math.ceil(audioFps))+' audio fps'
+        fontSize = 1
+        fontWidth = 1
+        fontColor = (255,255,255)
+        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+        textX = int((options['screenWidth'] - textSize[0]))
+        textY += textSize[1] + 20
+        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    step5Time = time.time()-stepTime
+    stepTime = time.time()
 
     # bpm debug text
-    text = str(round(bpm))+' bpm'
-    fontSize = 4
-    fontWidth = 4
-    fontColor = (255,255,255)
-    if beat:
-        fontColor = (0,0,255)
-    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-    textX = int((options['screenWidth'] - textSize[0])/2)
-    textY = int(options['screenHeight']/3)
-    cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+    textY = int(options['screenHeight']/5)
+    if debugDisplay['bpm']:
+        text = str(round(bpm))+' bpm'
+        fontSize = 1
+        fontWidth = 1
+        fontColor = (255,255,255)
+        if beat:
+            fontColor = (0,0,255)
+        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+        textX = int((options['screenWidth'] - textSize[0])/2)
+        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    step6Time = time.time()-stepTime
+    stepTime = time.time()
 
     # fpi debug text
-    text = str(round(framesPerInterval))+' frames per interval'
-    fontSize = 1
-    fontWidth = 1
-    fontColor = (255,255,255)
-    if beat:
-        fontColor = (0,0,255)
-    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-    textX = int((options['screenWidth'] - textSize[0])/2)
-    textY += textSize[1]+50
-    cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+    if debugDisplay['interval']:
+        text = str(round(framesPerInterval))+' frames per interval'
+        fontSize = 1
+        fontWidth = 1
+        fontColor = (255,255,255)
+        if beat:
+            fontColor = (0,0,255)
+        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+        textX = int((options['screenWidth'] - textSize[0])/2)
+        textY += textSize[1]+20
+        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    step7Time = time.time()-stepTime
+    stepTime = time.time()
 
 
     # print progress bar until next beat
+    y = int(options['screenHeight'] * 2/3)
     x = 300
     w = int(options['screenWidth'] - x*2)
-    y = int(options['screenHeight'] * 2/3)
     h = 30
-    c = (255,255,255)
-    if lateBeat:
-        c = (0,0,255)
-    lineWidth = 1
-    filledWidth = round((1-(framesUntilNextBeat/framesPerInterval))*w)
-    cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
-    cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
-    text = 'next beat'
-    fontSize = 1
-    fontWidth = 1
-    fontColor = (255,255,255)
-    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-    cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+    if debugDisplay['progress']:
+        c = (255,255,255)
+        if lateBeat:
+            c = (0,0,255)
+        lineWidth = 1
+        filledWidth = round((1-(framesUntilNextBeat/framesPerInterval))*w)
+        cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
+        cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
+        text = 'next beat'
+        fontSize = 1
+        fontWidth = 1
+        fontColor = (255,255,255)
+        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+        cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    step8Time = time.time()-stepTime
+    stepTime = time.time()
 
     # print pitch
-    y += h + 20
-    h = 30
-    c = (255,255,255)
-    cOld = (50,50,50)
-    lineWidth = 1
-    filledWidth = int((pitchValue)*w/100)
-    filledWidthOld = int((oldPitchValue)*w/100)
-    cv2.rectangle( frame, (x,y), (x+filledWidthOld, y+h), cOld, -1 )
-    cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
-    cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
-    text = 'pitch'
-    fontSize = 1
-    fontWidth = 1
-    fontColor = (255,255,255)
-    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-    cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+    if debugDisplay['pitch']:
+        y += h + 20
+        c = (255,255,255)
+        cOld = (50,50,50)
+        lineWidth = 1
+        filledWidth = int((pitchValue)*w/100)
+        filledWidthOld = int((oldPitchValue)*w/100)
+        cv2.rectangle( frame, (x,y), (x+filledWidthOld, y+h), cOld, -1 )
+        cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
+        cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
+        text = 'pitch'
+        fontSize = 1
+        fontWidth = 1
+        fontColor = (255,255,255)
+        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+        cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    step9Time = time.time()-stepTime
+    stepTime = time.time()
 
     # print Volume
-    y += h + 20
-    h = 30
-    c = (255,255,255)
-    cB = (0,0,0)
-    lineWidth = 1
-    midW= int(w/2)
-    scale = 4
-    if globalAverageVolume > 0:
-        volumePercent = globalVolume/globalAverageVolume
-    else:
-        volumePercent = 1
-    if volumePercent > 2:
-        volumePercent = 2
-    volumePercentMeasurement = (volumePercentMeasurement*globalVolumeDisplaySmoothing) + (volumePercent * (1.0-globalVolumeDisplaySmoothing))
-    filledWidth = midW*(volumePercentMeasurement-1)
-    cv2.rectangle( frame, (x+midW,y), (x+midW+int(filledWidth), y+h), c, -1 )
-    cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
-    text = 'volume'
-    fontSize = 1
-    fontWidth = 1
-    fontColor = (255,255,255)
-    textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-    cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+    if debugDisplay['volume']:
+        y += h + 20
+        c = (255,255,255)
+        cB = (0,0,0)
+        lineWidth = 1
+        midW= int(w/2)
+        scale = 4
+        if globalAverageVolume > 0:
+            volumePercent = globalVolume/globalAverageVolume
+        else:
+            volumePercent = 1
+        if volumePercent > 2:
+            volumePercent = 2
+        volumePercentMeasurement = (volumePercentMeasurement*globalVolumeDisplaySmoothing) + (volumePercent * (1.0-globalVolumeDisplaySmoothing))
+        filledWidth = midW*(volumePercentMeasurement-1)
+        cv2.rectangle( frame, (x+midW,y), (x+midW+int(filledWidth), y+h), c, -1 )
+        cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
+        text = 'volume'
+        fontSize = 1
+        fontWidth = 1
+        fontColor = (255,255,255)
+        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
+        cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+
+    step10Time = time.time()-stepTime
+    stepTime = time.time()
 
     # print peaks
-    data, beatData, index = audioProcessor.getPeaks()
-    index -= 1
-    if index < 0:
-        index = options['fps']-1
+    if debugDisplay['peaks']:
+        data, beatData, index = audioProcessor.getPeaks()
+        index -= 1
+        if index < 0:
+            index = options['fps']-1
 
-    w = math.ceil(options['screenWidth']/len(data))
-    x = options['screenWidth']-w
-    y = int(options['screenHeight']*3/5)
+        w = math.ceil(options['screenWidth']/len(data))
+        x = options['screenWidth']-w
+        y = int(options['screenHeight']*3/5)
 
-    for i in range(len(data)):
-        h = int(data[index])
-        o = beatData[index]
+        for i in range(len(data)):
+            h = int(data[index])
+            o = beatData[index]
 
-        color = (255,255,255)
-        if o:
-            color = (0,0,255)
+            color = (255,255,255)
+            if o:
+                color = (0,0,255)
 
-        cv2.rectangle( frame, (x,y), (x+w, y-h), color, -1 )
+            cv2.rectangle( frame, (x,y), (x+w, y-h), color, -1 )
 
-        x += w
+            x += w
 
-        index += 1
-        if index >= len(data):
-            index = 0
-        if x >= options['screenWidth']:
-            x = 0
+            index += 1
+            if index >= len(data):
+                index = 0
+            if x >= options['screenWidth']:
+                x = 0
 
+    step11Time = time.time()-stepTime
+    stepTime = time.time()
 
 
     cv2.imshow(options['windowName'], frame)
+
+    step12Time = time.time()-stepTime
+    stepTime = time.time()
+
+    step1Time = '01: '+str(int(step1Time*100000))
+    step2Time = '/ 02: '+str(int(step2Time*100000))
+    step3Time = '/ 03: '+str(int(step3Time*100000))
+    step4Time = '/ 04: '+str(int(step4Time*100000))
+    step5Time = '/ 05: '+str(int(step5Time*100000))
+    step6Time = '/ 06: '+str(int(step6Time*100000))
+    step7Time = '/ 07: '+str(int(step7Time*100000))
+    step8Time = '/ 08: '+str(int(step8Time*100000))
+    step9Time = '/ 09: '+str(int(step9Time*100000))
+    step10Time = '/ 10: '+str(int(step10Time*100000))
+    step11Time = '/ 11: '+str(int(step11Time*100000))
+    step12Time = '/ 12: '+str(int(step12Time*100000))
+
+    print(step1Time, step2Time, step3Time, step4Time, step5Time, step6Time, step7Time, step8Time, step9Time, step10Time, step11Time, step12Time)
 
     frameNumber += 1
 
@@ -427,7 +499,24 @@ while True:
     if key == 27: # escape
         print('exiting')
         break
-
+    elif key&0xFF == ord('q'):
+        debugDisplay['frameCount'] = not debugDisplay['frameCount']
+    elif key&0xFF == ord('w'):
+        debugDisplay['fps'] = not debugDisplay['fps']
+    elif key&0xFF == ord('e'):
+        debugDisplay['audioFps'] = not debugDisplay['audioFps']
+    elif key&0xFF == ord('r'):
+        debugDisplay['bpm'] = not debugDisplay['bpm']
+    elif key&0xFF == ord('t'):
+        debugDisplay['interval'] = not debugDisplay['interval']
+    elif key&0xFF == ord('z'):
+        debugDisplay['progress'] = not debugDisplay['progress']
+    elif key&0xFF == ord('u'):
+        debugDisplay['pitch'] = not debugDisplay['pitch']
+    elif key&0xFF == ord('i'):
+        debugDisplay['volume'] = not debugDisplay['volume']
+    elif key&0xFF == ord('o'):
+        debugDisplay['peaks'] = not debugDisplay['peaks']
 
 
 print('cleaning up ..')
