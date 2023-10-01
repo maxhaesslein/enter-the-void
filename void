@@ -22,7 +22,7 @@ options = {
 	'screenWidth': 1280,
 	'screenHeight': 720,
 
-	'fps': 60,
+	'fps': 30,
 
     'bufferSize': 512,
     'winSizeMultiple': 2, # 2 or 4
@@ -56,7 +56,7 @@ debugDisplay = {
 
 # setup window
 pygame.init()
-screen = pygame.display.set_mode((options['screenWidth'], options['screenHeight']), pygame.FULLSCREEN|pygame.NOFRAME)
+screen = pygame.display.set_mode((options['screenWidth'], options['screenHeight']), pygame.FULLSCREEN | pygame.NOFRAME )
 clock = pygame.time.Clock()
 
 pygame.font.init()
@@ -103,9 +103,16 @@ assets = []
 for imageFile in imageFiles:
     path = options['imagePath']+imageFile
 
-    image = pygame.image.load(path).convert_alpha()
+    #image = pygame.image.load(path).convert_alpha() # this is full transparency, but makes everything slow
 
-    image = pygame.transform.scale(image, (300, 300))
+    # this just makes black transparent, but is much faster:
+    image = pygame.image.load(path).convert()
+    image.set_colorkey("black")
+
+    w = 420
+    h = image.get_width()/image.get_height()*w
+
+    image = pygame.transform.scale(image, (w, h))
 
     assets.append(image)
 
@@ -441,32 +448,68 @@ y_offset = 0
 x_offset = 0
 
 
-def drawFrame( beatInformation ):
+def drawFrame( beatInformation, dt ):
 
     global s_img_index
 
-
-    if True:
-
-        if beatInformation['beat']:
-            screen.fill( "red" )
-
-        x = int(options['screenWidth']/2)
-        y = int(options['screenHeight']/2)
-        r = int((1-beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval'])*(options['screenHeight']*0.4))
-
-        pygame.draw.circle(screen, "white", (x,y), r)
-
+    p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
 
     if beatInformation['beat'] and not beatInformation['silence']:
+
         s_img_index += 1
         if s_img_index >= len(assets):
             s_img_index = 0
 
+        if False:
+            screen.fill( "red" )
+
+    if False:
+        x = int(options['screenWidth']/2)
+        y = int(options['screenHeight']/2)
+        r = int( (1-p)*(options['screenHeight']*0.4) )
+        pygame.draw.circle(screen, "white", (x,y), r)
+
     s_img = assets[s_img_index]
 
-    screen.blit(s_img, (0, 0))
+    xI = 0
+    yI = 0
 
+    for i in range(4):
+
+        x = screen.get_width()/2 +  xI * screen.get_width()/5 - s_img.get_width()/2
+        y = screen.get_height()/2 + yI * screen.get_height()/3 - s_img.get_height()/2
+
+        rect = s_img.get_rect(center=(x,y))
+
+        angle = p*90+(i*90)
+
+        r_img, r_rect = rotate(s_img, rect, angle)
+
+        screen.blit(r_img, r_rect)
+
+
+        xI += 1
+
+        if yI >= 1 and xI >= 2:
+            xI = 0
+
+        if xI >= 2:
+            xI = 1
+            yI += 1
+
+
+def rotate(image, rect, angle):
+    # Rotate the original image without modifying it.
+    new_image = pygame.transform.rotate(image, angle)
+    # Get a new rect with the center of the old rect.
+    rect = new_image.get_rect(center=rect.center)
+    return new_image, rect
+
+def rotatePivoted(im, angle, pivot):
+    image = pygame.transform.rotate(im, angle)
+    rect = image.get_rect()
+    rect.center = pivot
+    return image, rect
 
 
 
@@ -535,7 +578,7 @@ while running:
 
     beatInformation = getBeatInformation()
 
-    drawFrame( beatInformation )
+    drawFrame( beatInformation, dt )
     drawDebugDisplay( beatInformation )
 
     pygame.display.flip() # update screen
