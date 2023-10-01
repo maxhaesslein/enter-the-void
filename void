@@ -9,7 +9,7 @@
 from queue import Queue
 from threading import Thread
 import numpy as np
-import cv2
+import pygame
 import pyaudio
 import aubio
 import os
@@ -17,11 +17,12 @@ import sys
 import time
 import math
 
+
 options = {
 	'screenWidth': 1280,
 	'screenHeight': 720,
 
-	'fps': 30,
+	'fps': 60,
 
     'bufferSize': 512,
     'winSizeMultiple': 2, # 2 or 4
@@ -54,24 +55,19 @@ debugDisplay = {
 
 
 # setup window
-cv2.namedWindow( options['windowName'], cv2.WINDOW_NORMAL )
-cv2.resizeWindow( options['windowName'], options['screenWidth'], options['screenHeight'] )
-cv2.setWindowProperty( options['windowName'], cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN )
+pygame.init()
+screen = pygame.display.set_mode((options['screenWidth'], options['screenHeight']), pygame.FULLSCREEN|pygame.NOFRAME)
+clock = pygame.time.Clock()
 
-# display startup image
-startupImage = np.zeros((options['screenHeight'], options['screenWidth'], 3), np.uint8)
-font = cv2.FONT_HERSHEY_TRIPLEX
-text = 'loading ...'
-fontSize = 1
-fontWidth = 1
-fontColor = (255,255,255)
-textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-textX = int((options['screenWidth'] - textSize[0]) / 2)
-textY = int((options['screenHeight'] - textSize[1]*2))
-cv2.putText( img=startupImage, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth, lineType=cv2.LINE_AA )
+pygame.font.init()
+font = pygame.font.SysFont( None, 48 )
 
-cv2.imshow(options['windowName'], startupImage)
-cv2.waitKey(60)
+screen.fill( "black" )
+text = font.render('loading ...', True, "white")
+textPosition = text.get_rect(center=(screen.get_width()/2, screen.get_height()/2))
+screen.blit(text, textPosition)
+pygame.display.flip()
+
 
 # get audio input options
 pa = pyaudio.PyAudio()
@@ -106,12 +102,10 @@ assets = []
 
 for imageFile in imageFiles:
     path = options['imagePath']+imageFile
-    image = cv2.imread( path, cv2.IMREAD_UNCHANGED )
 
-    w = 600
-    h = round(image.shape[1]/image.shape[0]*w)
+    image = pygame.image.load(path).convert_alpha()
 
-    image = cv2.resize( image, (w,h) )
+    image = pygame.transform.scale(image, (300, 300))
 
     assets.append(image)
 
@@ -232,121 +226,105 @@ class AudioProcessor():
         self.audio.terminate()
 
 
-def drawDebugDisplay( frame, beatInformation ):
+def drawDebugDisplay( beatInformation ):
 
     global volumePercentMeasurement
-
-    font = cv2.FONT_HERSHEY_TRIPLEX
-
-    # frame count debug text
-    if debugDisplay['frameCount']:
-        text = 'frame #'+str(beatInformation['frameNumber'])+' / next beat at #'+str(int(beatInformation['frameNumber']+beatInformation['framesUntilNextBeat']))
-        fontSize = 1
-        fontWidth = 1
-        fontColor = (255,255,255)
-        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-        textX = 1
-        textY = options['screenHeight']-1
-        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
 
     # fps debug text
     textY = 0
     if debugDisplay['fps']:
-        text = str(math.ceil(fpsDisplay))+' main fps'
-        fontSize = 1
-        fontWidth = 1
-        if fpsDisplay < options['fps']*0.8:
-            fontColor = (0,0,255)
-        elif fpsDisplay < options['fps']*0.9:
-            fontColor = (0,255,255)
-        else:
-            fontColor = (0,255,0)
-        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-        textX = int((options['screenWidth'] - textSize[0]))
-        textY = textSize[1]
-        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
+        text = str(int(fps))+' main fps'
+        textColor = "green"
+        if fps < options['fps']*0.8:
+            textColor = "red"
+        elif fps < options['fps']*0.9:
+            textColor = "yellow"
+        textRender = font.render( text, True, textColor )
+        textPosition = (screen.get_width()-textRender.get_width(), textY)
+        screen.blit(textRender, textPosition)
+        textY += textRender.get_height()+10
 
     # audioProcessor fps debug text
     if debugDisplay['audioFps']:
-        audioFps = audioProcessor.getFps()
-        text = str(math.ceil(audioFps))+' audio fps'
-        fontSize = 1
-        fontWidth = 1
-        fontColor = (255,255,255)
-        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-        textX = int((options['screenWidth'] - textSize[0]))
-        textY += textSize[1] + 20
-        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
+        text = str(math.ceil(audioProcessor.getFps()))+' audio fps'
+        textRender = font.render( text, True, "white" )
+        textPosition = (screen.get_width()-textRender.get_width(), textY)
+        screen.blit(textRender, textPosition)
+
+    # frame count debug text
+    if debugDisplay['frameCount']:
+        text = 'frame #'+str(beatInformation['frameNumber'])+' / next beat at #'+str(int(beatInformation['frameNumber']+beatInformation['framesUntilNextBeat']))
+        textRender = font.render( text, True, "white" )
+        textPosition = (0, screen.get_height()-textRender.get_height())
+        screen.blit(textRender, textPosition)
 
     # bpm debug text
-    textY = int(options['screenHeight']/5)
+    textY = int(screen.get_height()/5)
     if debugDisplay['bpm']:
         text = str(round(beatInformation['bpm']))+' bpm'
-        fontSize = 3
-        fontWidth = 3
-        fontColor = (255,255,255)
+        textColor = "white"
         if beatInformation['beat']:
-            fontColor = (0,0,255)
-        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-        textX = int((options['screenWidth'] - textSize[0])/2)
-        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
+            textColor = "red"
+        textRender = font.render( text, True, textColor )
+        textX = int((screen.get_width()-textRender.get_width())/2)
+        textPosition = (textX, textY)
+        screen.blit(textRender, textPosition)
+        textY += textRender.get_height()+40
 
     # fpi debug text
     if debugDisplay['interval']:
         text = str(round(beatInformation['framesPerInterval']))+' frames per interval'
-        fontSize = 1
-        fontWidth = 1
-        fontColor = (255,255,255)
+        textColor = "white"
         if beatInformation['beat']:
-            fontColor = (0,0,255)
-        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-        textX = int((options['screenWidth'] - textSize[0])/2)
-        textY += textSize[1]+40
-        cv2.putText( img=frame, text=text, org=(textX, textY), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
+            textColor = "red"
+        textRender = font.render( text, True, textColor )
+        textX = int((screen.get_width()-textRender.get_width())/2)
+        textPosition = (textX, textY)
+        screen.blit(textRender, textPosition)
 
     # print progress bar until next beat
-    y = int(options['screenHeight'] * 2/3)
+    y = int(screen.get_height() * 2/3)
     x = 300
-    w = int(options['screenWidth'] - x*2)
+    w = int(screen.get_width() - x*2)
     h = 30
     if debugDisplay['progress']:
-        c = (255,255,255)
+        color = "white"
         if beatInformation['lateBeat']:
-            c = (0,0,255)
-        lineWidth = 1
+            color = "red"
         filledWidth = round((1-(beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']))*w)
-        cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
-        cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
+        pygame.draw.rect(screen, color, (x,y,w,h), True)
+        pygame.draw.rect(screen, color, (x,y,filledWidth,h), False)
+
         text = 'next beat'
-        fontSize = 1
-        fontWidth = 1
-        fontColor = (255,255,255)
-        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-        cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
+        textRender = font.render( text, True, color )
+        textX = int(x-textRender.get_width()-10)
+        textY = int(y+h/2-textRender.get_height()/2)
+        textPosition = (textX, textY)
+        screen.blit(textRender, textPosition)
+
+        y += h + 20
 
     # print pitch
     if debugDisplay['pitch']:
-        y += h + 20
-        c = (255,255,255)
-        lineWidth = 1
+
         filledWidth = int((beatInformation['pitch'])*w/100)
-        cv2.rectangle( frame, (x,y), (x+filledWidth, y+h), c, -1 )
-        cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
+        pygame.draw.rect(screen, "white", (x,y,w,h), True)
+        pygame.draw.rect(screen, "white", (x,y,filledWidth,h), False)
+
         text = 'pitch'
-        fontSize = 1
-        fontWidth = 1
-        fontColor = (255,255,255)
-        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-        cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
+        textRender = font.render( text, True, "white" )
+        textX = int(x-textRender.get_width()-10)
+        textY = int(y+h/2-textRender.get_height()/2)
+        textPosition = (textX, textY)
+        screen.blit(textRender, textPosition)
+
+        y += h + 20
 
     # print Volume
     if debugDisplay['volume']:
-        y += h + 20
-        c = (255,255,255)
+        color = "white"
         if beatInformation['silence']:
-            c = (0,0,255)
-        cB = (0,0,0)
-        lineWidth = 1
+            color = "red"
         midW= int(w/2)
         scale = 4
         if beatInformation['volume'] > 0:
@@ -357,16 +335,23 @@ def drawDebugDisplay( frame, beatInformation ):
             volumePercent = 2
         silenceMarker = round(w/2*options['silenceThreshold'])
         volumePercentMeasurement = (volumePercentMeasurement*globalVolumeDisplaySmoothing) + (volumePercent * (1.0-globalVolumeDisplaySmoothing))
-        filledWidth = midW*(volumePercentMeasurement-1)
-        cv2.rectangle( frame, (x+midW,y), (x+midW+int(filledWidth), y+h), c, -1 )
-        cv2.rectangle( frame, (x,y), (x+w, y+h), c, lineWidth )
-        cv2.rectangle( frame, (x+silenceMarker,y), (x+silenceMarker+1, y+h), c, lineWidth )
+        filledWidth = int(midW*(volumePercentMeasurement-1))
+
+        filledX = x
+        if filledWidth < 0:
+            filledX += filledWidth
+            filledWidth *= -1
+
+        pygame.draw.rect(screen, color, (filledX+midW,y,filledWidth,h), False)
+        pygame.draw.rect(screen, color, (x,y,w,h), True)
+        pygame.draw.rect(screen, color, (x+silenceMarker,y,2,h), True)
+
         text = 'volume'
-        fontSize = 1
-        fontWidth = 1
-        fontColor = (255,255,255)
-        textSize = cv2.getTextSize(text, font, fontSize, fontWidth)[0]
-        cv2.putText( img=frame, text=text, org=(x-textSize[0]-10, int(y+h/2+textSize[1]/2)), fontFace=font, fontScale=fontSize, color=fontColor, thickness=fontWidth )
+        textRender = font.render( text, True, "white" )
+        textX = int(x-textRender.get_width()-10)
+        textY = int(y+h/2-textRender.get_height()/2)
+        textPosition = (textX, textY)
+        screen.blit(textRender, textPosition)
 
     # print peaks
     if debugDisplay['peaks']:
@@ -378,7 +363,7 @@ def drawDebugDisplay( frame, beatInformation ):
         w = math.ceil(options['screenWidth']/len(data))
         x = options['screenWidth']-w
         y = int(options['screenHeight']*3/5)
-        h = 2
+        h = 4
         color = (255,255,255)
 
         for i in range(len(data)):
@@ -386,9 +371,9 @@ def drawDebugDisplay( frame, beatInformation ):
             o = beatData[index]
 
             if o:
-                cv2.rectangle( frame, (x,y-200), (x+4, y), (0,0,255), -1 )
+                pygame.draw.rect(screen, "red", (x,y-200,4,200), False)
 
-            cv2.rectangle( frame, (x,y-y2), (x+w, y-y2+h), color, -1 )
+            pygame.draw.rect(screen, "white", (x,y-y2,w,h), False)
 
             x += w
 
@@ -397,9 +382,6 @@ def drawDebugDisplay( frame, beatInformation ):
                 index = 0
             if x >= options['screenWidth']:
                 x = 0
-
-
-    return frame
 
 
 def getBeatInformation():
@@ -463,18 +445,17 @@ def drawFrame( beatInformation ):
 
     global s_img_index
 
-    frame = np.zeros((options['screenHeight'], options['screenWidth'], 3), np.uint8)
 
-    if False:
+    if True:
 
         if beatInformation['beat']:
-            cv2.rectangle( frame, (0,0), (options['screenWidth'],options['screenHeight']),(0,0,255), -1 )
+            screen.fill( "red" )
 
         x = int(options['screenWidth']/2)
         y = int(options['screenHeight']/2)
         r = int((1-beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval'])*(options['screenHeight']*0.4))
 
-        cv2.circle( frame,(x,y), r, (255,255,255), -1 )
+        pygame.draw.circle(screen, "white", (x,y), r)
 
 
     if beatInformation['beat'] and not beatInformation['silence']:
@@ -484,49 +465,8 @@ def drawFrame( beatInformation ):
 
     s_img = assets[s_img_index]
 
+    screen.blit(s_img, (0, 0))
 
-    if False:
-
-        y1, y2 = y_offset, y_offset + s_img.shape[0]
-        x1, x2 = x_offset, x_offset + s_img.shape[1]
-
-        alpha_s = s_img[:, :, 3] / 255.0
-        alpha_l = 1.0 - alpha_s
-
-        for c in range(0, 3):
-            frame[y1:y2, x1:x2, c] = (alpha_s * s_img[:, :, c] +
-                                      alpha_l * frame[y1:y2, x1:x2, c])
-
-    if True:
-
-        # separate the alpha channel from the color channels
-        alpha_channel = s_img[:, :, 3] / 255 # convert from 0-255 to 0.0-1.0
-        overlay_colors = s_img[:, :, :1]
-
-        # To take advantage of the speed of numpy and apply transformations to the entire image with a single operation
-        # the arrays need to be the same shape. However, the shapes currently looks like this:
-        #    - overlay_colors shape:(width, height, 3)  3 color values for each pixel, (red, green, blue)
-        #    - alpha_channel  shape:(width, height, 1)  1 single alpha value for each pixel
-        # We will construct an alpha_mask that has the same shape as the overlay_colors by duplicate the alpha channel
-        # for each color so there is a 1:1 alpha channel for each color channel
-        #alpha_mask = np.dstack((alpha_channel, alpha_channel, alpha_channel))
-        alpha_mask = alpha_channel[:,:,np.newaxis]
-
-        # The background image is larger than the overlay so we'll take a subsection of the background that matches the
-        # dimensions of the overlay.
-        # NOTE: For simplicity, the overlay is applied to the top-left corner of the background(0,0). An x and y offset
-        # could be used to place the overlay at any position on the background.
-        h, w = s_img.shape[:2]
-        background_subsection = frame[0:h, 0:w]
-
-        # combine the background with the overlay image weighted by alpha
-        composite = background_subsection * (1 - alpha_mask) + overlay_colors * alpha_mask
-
-        # overwrite the section of the background image that has been updated
-        frame[0:h, 0:w] = composite
-
-
-    return frame
 
 
 
@@ -548,74 +488,70 @@ volumePercentMeasurement = 1
 
 fps = options['fps']
 fpsDisplay = options['fps']
-previousTime = time.time()
-currentTime = time.time()
 
 
 verbose = False
 
 audioProcessor = AudioProcessor()
 
+
+running = True
+dt = 0
+
+player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2) # DEBUG
+
 # main loop
-while True:
+while running:
 
-    startTime = time.time()
+    # poll for events; pygame.QUIT event means the user clicked X to close your window
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                running = False
+            elif event.key == pygame.K_q:
+                debugDisplay['fps'] = not debugDisplay['fps']
+            elif event.key == pygame.K_w:
+                debugDisplay['audioFps'] = not debugDisplay['audioFps']
+            elif event.key == pygame.K_e:
+                debugDisplay['frameCount'] = not debugDisplay['frameCount']
+            elif event.key == pygame.K_r:
+                debugDisplay['bpm'] = not debugDisplay['bpm']
+            elif event.key == pygame.K_t:
+                debugDisplay['interval'] = not debugDisplay['interval']
+            elif event.key == pygame.K_z:
+                debugDisplay['progress'] = not debugDisplay['progress']
+            elif event.key == pygame.K_u:
+                debugDisplay['pitch'] = not debugDisplay['pitch']
+            elif event.key == pygame.K_i:
+                debugDisplay['volume'] = not debugDisplay['volume']
+            elif event.key == pygame.K_o:
+                debugDisplay['peaks'] = not debugDisplay['peaks']
+            elif event.key == pygame.K_v:
+                verbose = not verbose
 
+    screen.fill( "black" )
 
     beatInformation = getBeatInformation()
 
-    frame = drawFrame( beatInformation )
-    frame = drawDebugDisplay( frame, beatInformation )
+    drawFrame( beatInformation )
+    drawDebugDisplay( beatInformation )
 
-    cv2.imshow(options['windowName'], frame)
-
+    pygame.display.flip() # update screen
 
     frameNumber += 1 # TODO: check, when this rolls over
 
-    previousTime, currentTime = currentTime, time.time()
-    fps = round(1./(currentTime-previousTime))
-    fpsSmoothing = 0.6
-    fpsDisplay = (fpsDisplay * fpsSmoothing) + (fps * (1.0-fpsSmoothing))
+    # limits FPS; dt is delta time in seconds since last frame, used for framerate-independent physics.
+    dt = clock.tick(options['fps']) / 1000
 
-    usedTime = time.time() - startTime
-    timeLeft = targetTime-usedTime
-    sleepTime = int(timeLeft*1000)
-    if sleepTime < 1:
-        sleepTime = 1
-
-    key = cv2.waitKey(sleepTime)
-
-    if key == 27: # escape
-        print('exiting')
-        break
-
-    elif key&0xFF == ord('q'):
-        debugDisplay['frameCount'] = not debugDisplay['frameCount']
-    elif key&0xFF == ord('w'):
-        debugDisplay['fps'] = not debugDisplay['fps']
-    elif key&0xFF == ord('e'):
-        debugDisplay['audioFps'] = not debugDisplay['audioFps']
-    elif key&0xFF == ord('r'):
-        debugDisplay['bpm'] = not debugDisplay['bpm']
-    elif key&0xFF == ord('t'):
-        debugDisplay['interval'] = not debugDisplay['interval']
-    elif key&0xFF == ord('z'):
-        debugDisplay['progress'] = not debugDisplay['progress']
-    elif key&0xFF == ord('u'):
-        debugDisplay['pitch'] = not debugDisplay['pitch']
-    elif key&0xFF == ord('i'):
-        debugDisplay['volume'] = not debugDisplay['volume']
-    elif key&0xFF == ord('o'):
-        debugDisplay['peaks'] = not debugDisplay['peaks']
-
-    elif key&0xFF == ord('v'):
-        verbose = not verbose
+    fps = clock.get_fps()
 
 
 print('cleaning up ..')
 
 audioProcessor.stop()
-cv2.destroyAllWindows()
+pygame.quit()
 
 print('bye!')
 
