@@ -12,6 +12,7 @@ import numpy as np
 import cv2
 import pyaudio
 import aubio
+import os
 import sys
 import time
 import math
@@ -33,6 +34,9 @@ options = {
     'audioDisplayScaling': 3000,
 
     'silenceThreshold': 0.18,
+
+    'imagePath': 'assets/',
+    'imageExtension': 'png',
 
 }
 
@@ -95,6 +99,23 @@ audioOptions = {
     'winSize': options['bufferSize']*options['winSizeMultiple'],
 }
 
+# get assets
+imageFiles = [f for f in os.listdir(options['imagePath']) if os.path.isfile(os.path.join(options['imagePath'], f)) and f.lower().endswith(options['imageExtension'])]
+
+assets = []
+
+for imageFile in imageFiles:
+    path = options['imagePath']+imageFile
+    image = cv2.imread( path, cv2.IMREAD_UNCHANGED )
+
+    w = 600
+    h = round(image.shape[1]/image.shape[0]*w)
+
+    image = cv2.resize( image, (w,h) )
+
+    assets.append(image)
+
+
 if options['verbose']:
     print('')
     print('---------')
@@ -104,6 +125,9 @@ if options['verbose']:
     print('')
     print('-- audio options --')
     print(audioOptions)
+    print('')
+    print('-- assets --')
+    print(str(len(assets))+' assets loaded')
     print('')
     print('---------')
     print('')
@@ -429,9 +453,78 @@ def getBeatInformation():
     return beatInformation
 
 
+
+s_img_index = 0
+y_offset = 0
+x_offset = 0
+
+
 def drawFrame( beatInformation ):
 
+    global s_img_index
+
     frame = np.zeros((options['screenHeight'], options['screenWidth'], 3), np.uint8)
+
+    if False:
+
+        if beatInformation['beat']:
+            cv2.rectangle( frame, (0,0), (options['screenWidth'],options['screenHeight']),(0,0,255), -1 )
+
+        x = int(options['screenWidth']/2)
+        y = int(options['screenHeight']/2)
+        r = int((1-beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval'])*(options['screenHeight']*0.4))
+
+        cv2.circle( frame,(x,y), r, (255,255,255), -1 )
+
+
+    if beatInformation['beat'] and not beatInformation['silence']:
+        s_img_index += 1
+        if s_img_index >= len(assets):
+            s_img_index = 0
+
+    s_img = assets[s_img_index]
+
+
+    if False:
+
+        y1, y2 = y_offset, y_offset + s_img.shape[0]
+        x1, x2 = x_offset, x_offset + s_img.shape[1]
+
+        alpha_s = s_img[:, :, 3] / 255.0
+        alpha_l = 1.0 - alpha_s
+
+        for c in range(0, 3):
+            frame[y1:y2, x1:x2, c] = (alpha_s * s_img[:, :, c] +
+                                      alpha_l * frame[y1:y2, x1:x2, c])
+
+    if True:
+
+        # separate the alpha channel from the color channels
+        alpha_channel = s_img[:, :, 3] / 255 # convert from 0-255 to 0.0-1.0
+        overlay_colors = s_img[:, :, :1]
+
+        # To take advantage of the speed of numpy and apply transformations to the entire image with a single operation
+        # the arrays need to be the same shape. However, the shapes currently looks like this:
+        #    - overlay_colors shape:(width, height, 3)  3 color values for each pixel, (red, green, blue)
+        #    - alpha_channel  shape:(width, height, 1)  1 single alpha value for each pixel
+        # We will construct an alpha_mask that has the same shape as the overlay_colors by duplicate the alpha channel
+        # for each color so there is a 1:1 alpha channel for each color channel
+        #alpha_mask = np.dstack((alpha_channel, alpha_channel, alpha_channel))
+        alpha_mask = alpha_channel[:,:,np.newaxis]
+
+        # The background image is larger than the overlay so we'll take a subsection of the background that matches the
+        # dimensions of the overlay.
+        # NOTE: For simplicity, the overlay is applied to the top-left corner of the background(0,0). An x and y offset
+        # could be used to place the overlay at any position on the background.
+        h, w = s_img.shape[:2]
+        background_subsection = frame[0:h, 0:w]
+
+        # combine the background with the overlay image weighted by alpha
+        composite = background_subsection * (1 - alpha_mask) + overlay_colors * alpha_mask
+
+        # overwrite the section of the background image that has been updated
+        frame[0:h, 0:w] = composite
+
 
     return frame
 
