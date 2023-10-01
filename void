@@ -354,16 +354,17 @@ def drawDebugDisplay( frame, beatInformation ):
         w = math.ceil(options['screenWidth']/len(data))
         x = options['screenWidth']-w
         y = int(options['screenHeight']*3/5)
+        h = 2
+        color = (255,255,255)
 
         for i in range(len(data)):
-            h = int(data[index])
+            y2 = int(data[index])
             o = beatData[index]
 
-            color = (255,255,255)
             if o:
-                color = (0,0,255)
+                cv2.rectangle( frame, (x,y-200), (x+4, y), (0,0,255), -1 )
 
-            cv2.rectangle( frame, (x,y), (x+w, y-h), color, -1 )
+            cv2.rectangle( frame, (x,y-y2), (x+w, y-y2+h), color, -1 )
 
             x += w
 
