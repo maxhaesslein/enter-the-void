@@ -35,6 +35,7 @@ options = {
     'audioDisplayScaling': 3000,
 
     'silenceThreshold': 0.18,
+    'beatConfidenceThreshold': 0.01,
 
     'imagePath': 'assets/',
     'imageExtension': 'png',
@@ -148,6 +149,8 @@ class AudioProcessor():
         self.fpsSmoothing = 0.9
 
         self.beatQueue = Queue()
+        self.bpmQueue = Queue()
+        self.periodQueue = Queue()
         self.pitchQueue = Queue()
 
         peakBufferSize = int(audioOptions['sampleRate']/options['bufferSize']) # one second worth of bufferSizes
@@ -184,8 +187,13 @@ class AudioProcessor():
 
         beat = self.tempoDetection(signal)
         if beat:
-            bpm = self.tempoDetection.get_bpm()
-            self.beatQueue.put(bpm)
+            confidence = self.tempoDetection.get_confidence()
+            if confidence > 0.0:
+                self.beatQueue.put(confidence)
+                bpm = self.tempoDetection.get_bpm()
+                self.bpmQueue.put(bpm)
+                period = self.tempoDetection.get_period()
+                self.periodQueue.put(period)
 
         pitch = self.pitchDetection(signal)
         if pitch[0] != 0:
@@ -212,14 +220,24 @@ class AudioProcessor():
         return (in_data, pyaudio.paContinue)
 
     def getBeat(self):
-        if self.beatQueue.qsize() > 0:
-            return self.beatQueue.get()
-        return False
+        if self.beatQueue.empty():
+            return False
+        return self.beatQueue.get()
+
+    def getPeriod(self):
+        if self.periodQueue.empty():
+            return False
+        return self.periodQueue.get()
+
+    def getBpm(self):
+        if self.bpmQueue.empty():
+            return False
+        return self.bpmQueue.get()
 
     def getPitch(self):
-        if self.pitchQueue.qsize() > 0:
-            return self.pitchQueue.get()
-        return False
+        if self.pitchQueue.empty():
+            return False
+        return self.pitchQueue.get()
 
     def getPeaks(self):
         return self.peakBuffer, self.peakBufferBeat, self.peakBufferIndex
@@ -404,12 +422,16 @@ def getBeatInformation():
         lateBeat = True
         framesUntilNextBeat = 0
 
-    beat = audioProcessor.getBeat()
-    if beat:
-        bpm = beat
+    beat = False
+    beatConfidence = audioProcessor.getBeat()
+    if beatConfidence > options['beatConfidenceThreshold']:
+        bpm = audioProcessor.getBpm()
+        period = audioProcessor.getPeriod()
         beat = True
-        framesPerInterval = framesUntilNextBeat = fps*60/bpm
+        framesPerInterval = framesUntilNextBeat = fps*period/audioOptions['sampleRate']
         lateBeat = False
+    elif options['verbose'] and beatConfidence > 0.0:
+        print('beat detected, but confidence too low', beatConfidence)
 
     if pitchValue > 0:
         oldPitchValue = pitchValue
@@ -432,8 +454,9 @@ def getBeatInformation():
     beatInformation = {
             'fps': fps,
             'frameNumber': frameNumber,
-            'bpm': bpm,
             'beat': beat,
+            'bpm': bpm,
+            'beatConfidence': beatConfidence,
             'lateBeat': lateBeat,
             'framesUntilNextBeat': framesUntilNextBeat,
             'framesPerInterval': framesPerInterval,
