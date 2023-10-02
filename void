@@ -39,7 +39,7 @@ options = {
     'imagePath': 'assets/',
     'imageExtension': 'png',
 
-    'imageWidth': 400, # TODO: check, how large we can go without loosing framerate
+    'imageWidth': 320,
 
 }
 
@@ -107,20 +107,18 @@ for imageFile in imageFiles:
 
     image = pygame.image.load(path).convert()
 
-    # images should be square!!
-
     w = options['imageWidth']
     h = image.get_width()/image.get_height()*w
 
-    if w != h:
-        print('[WARNING] assets should be square!')
-        #h = w
+    image = pygame.transform.smoothscale(image, (w, h))
 
-    image = pygame.transform.scale(image, (w, h))
+    size = math.ceil(math.sqrt( math.pow(w, 2) + math.pow(h, 2) ))
 
-    #image.set_colorkey("black") # TODO: maybe don't use colorkey, but multiply on blit
+    surface = pygame.Surface((size, size)) # add space around the image, so we have enough padding to rotate the image
 
-    assets.append(image)
+    surface.blit( image, (int((size-w)/2), int((size-h)/2)) )
+
+    assets.append(surface)
 
 
 if options['verbose']:
@@ -472,112 +470,35 @@ def drawFrame( beatInformation, dt ):
 
     s_img = assets[s_img_index]
 
-
     rotation += dt*50
 
-    if False:
-        # left top part:
-        rect = s_img.get_rect()
-        lt_img, lt_rect = rotate(s_img, rect, rotation)
+    rect = s_img.get_rect()
+    lt_img, lt_rect = rotate(s_img, rect, rotation)
 
-        left_img = pygame.Surface((s_img.get_width(), s_img.get_height()*2))
+    size = s_img.get_height()*1.5
 
-        left_img.fill("blue") # DEBUG
+    left_img = pygame.Surface((s_img.get_width(), size))
+    left_img.blit(lt_img, lt_rect)
 
-        left_img.blit(lt_img, (0,0), special_flags=pygame.BLEND_ADD)
+    lb_img = pygame.transform.flip(lt_img, False, True)
+    lb_rect = lb_img.get_rect(center=(s_img.get_width()/2,s_img.get_height()))
+    left_img.blit(lb_img, lb_rect, special_flags=pygame.BLEND_ADD)
 
-        lb_img = pygame.transform.flip(lt_img, False, True)
-        left_img.blit(lt_img, (0,s_img.get_height()), special_flags=pygame.BLEND_ADD)
+    element = pygame.Surface((size,size))
+    element.blit(left_img, (0,0))
 
-        left_rect = left_img.get_rect()
+    right_img = pygame.transform.flip(left_img, True, False)
+    right_rect = right_img.get_rect(center=(size*2/3,size/2))
 
-        screen.blit(left_img, left_rect)
+    element.blit(right_img, right_rect, special_flags=pygame.BLEND_ADD)
 
-
-        return # DEBUG: ignore everthing below
-
-
-    if True:
-
-        # rotate first, then loop over positions
-
-        x = screen.get_width()/2
-        y = screen.get_height()/2
-        rect = s_img.get_rect(center=(x,y))
-        r_img, r_rect = rotate(s_img, rect, rotation)
-
-        xI = 0
-        yI = 0
-
-        for i in range(4):
-
-            x = screen.get_width()/2 +  xI * screen.get_width()/5 - r_img.get_width()/2
-            y = screen.get_height()/2 + yI * screen.get_height()/3 - r_img.get_height()/2
-
-            rect = s_img.get_rect(center=(x,y))
-
-            r2_img = r_img
-
-            if yI == 1:
-                r2_img = pygame.transform.flip(r2_img, False, True)
-
-            if xI == 0:
-                r2_img = pygame.transform.flip(r2_img, True, False)
-
-            screen.blit(r2_img, rect, special_flags=pygame.BLEND_ADD)
-
-            xI += 1
-
-            if yI >= 1 and xI >= 2:
-                xI = 0
-
-            if xI >= 2:
-                xI = 1
-                yI += 1
-
-    else:
-
-        # rotate while looping
-
-        s_img = assets[s_img_index]
-
-        xI = 0
-        yI = 0
-
-        for i in range(4):
-
-            x = screen.get_width()/2 +  xI * screen.get_width()/5 - s_img.get_width()/2
-            y = screen.get_height()/2 + yI * screen.get_height()/3 - s_img.get_height()/2
-
-            rect = s_img.get_rect(center=(x,y))
-
-            angle = rotation
-            if xI == 0 and yI == 0:
-                angle *= -1
-            if xI == 1 and yI == 1:
-                angle *= -1
-
-            if yI == 1:
-                s2_img = pygame.transform.flip(s_img, False, True)
-            else:
-                s2_img = s_img
-
-            if xI == 0:
-                s2_img = pygame.transform.flip(s2_img, True, False)
-
-            r_img, r_rect = rotate(s2_img, rect, angle)
-
-            screen.blit(r_img, r_rect)
-
-
-            xI += 1
-
-            if yI >= 1 and xI >= 2:
-                xI = 0
-
-            if xI >= 2:
-                xI = 1
-                yI += 1
+    centerY = screen.get_height()/2-size/2
+    pos1 = (screen.get_width()/2-size/2, centerY)
+    pos2 = (-size*1/5, centerY)
+    pos3 = (screen.get_width()-size*4/5, centerY)
+    screen.blit(element, pos1)
+    screen.blit(element, pos2, special_flags=pygame.BLEND_ADD)
+    screen.blit(element, pos3, special_flags=pygame.BLEND_ADD)
 
 
 def rotate(image, rect, angle):
