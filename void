@@ -47,7 +47,7 @@ options = {
 
 debugDisplay = {
     'frameCount': False,
-    'fps': True,
+    'fps': False,
     'audioFps': False,
     'bpm': False,
     'interval': False,
@@ -561,10 +561,10 @@ def drawFrame( beatInformation, dt ):
     #pos3 = (screen.get_width()-size*4/5, centerY)
 
     backgroundColor = pygame.Color(0,0,0)
-    backgroundBrightness = 20+p*30
+    backgroundSaturation = 50+p*30
     if beatInformation['silence']:
-        backgroundBrightness = 20
-    backgroundColor.hsva = (backgroundHue, 50, backgroundBrightness, 100)
+        backgroundSaturation = 50
+    backgroundColor.hsva = (backgroundHue, backgroundSaturation, 50, 100)
     screen.fill( backgroundColor )
 
     screen.blit(element, pos1, special_flags=pygame.BLEND_ADD)
