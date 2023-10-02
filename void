@@ -16,6 +16,7 @@ import os
 import sys
 import time
 import math
+import random
 
 
 options = {
@@ -257,8 +258,6 @@ class AudioProcessor():
 
 def drawDebugDisplay( beatInformation ):
 
-    global volumePercentMeasurement
-
     # fps debug text
     textY = 0
     if debugDisplay['fps']:
@@ -356,15 +355,8 @@ def drawDebugDisplay( beatInformation ):
             color = "red"
         midW= int(w/2)
         scale = 4
-        if beatInformation['volume'] > 0:
-            volumePercent = beatInformation['volume']/beatInformation['averageVolume']
-        else:
-            volumePercent = 1
-        if volumePercent > 2:
-            volumePercent = 2
         silenceMarker = round(w/2*options['silenceThreshold'])
-        volumePercentMeasurement = (volumePercentMeasurement*globalVolumeDisplaySmoothing) + (volumePercent * (1.0-globalVolumeDisplaySmoothing))
-        filledWidth = int(midW*(volumePercentMeasurement-1))
+        filledWidth = int(midW*(beatInformation['volumePercent']-1))
 
         filledX = x
         if filledWidth < 0:
@@ -415,7 +407,7 @@ def drawDebugDisplay( beatInformation ):
 
 def getBeatInformation():
 
-    global framesUntilNextBeat, pitchValue, volumeBufferIndex, bpm, framesPerInterval, lateBeat, frameNumber
+    global framesUntilNextBeat, pitchValue, volumeBufferIndex, bpm, framesPerInterval, lateBeat, frameNumber, volumePercentMeasurement
 
     framesUntilNextBeat -= 1
     if framesUntilNextBeat < 0:
@@ -447,8 +439,19 @@ def getBeatInformation():
         volumeBufferIndex = 0
     globalAverageVolume = np.sum(volumeBuffer)/len(volumeBuffer)
 
+    if globalVolume > 0:
+        volumePercent = globalVolume/globalAverageVolume
+    else:
+        volumePercent = 1
+
+    if volumePercent > 2:
+        volumePercent = 2
+
+    volumeDisplaySmoothing = 0.7
+    volumePercentMeasurement = (volumePercentMeasurement*volumeDisplaySmoothing) + (volumePercent * (1.0-volumeDisplaySmoothing))
+
     silence = False
-    if globalVolume < globalAverageVolume * options['silenceThreshold']:
+    if volumePercentMeasurement < options['silenceThreshold']:
         silence = True
 
     beatInformation = {
@@ -463,6 +466,7 @@ def getBeatInformation():
             'pitch': pitchValue,
             'volume': globalVolume,
             'averageVolume': globalAverageVolume,
+            'volumePercent': volumePercentMeasurement,
             'silence': silence,
     }
 
@@ -474,17 +478,22 @@ s_img_index = 0
 y_offset = 0
 x_offset = 0
 rotation = 0
-rotationAcceleration = 0
+rotationAcceleration = 50
 rotationDirection = 1
+backgroundHue = random.randint(0,360)
 
 
 def drawFrame( beatInformation, dt ):
 
-    global s_img_index, rotation, rotationDirection, rotationAcceleration
+    global s_img_index, rotation, rotationDirection, rotationAcceleration, backgroundHue
 
     p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
 
     rotationAcceleration -= 0.05
+
+    backgroundHue += 1
+    if backgroundHue >= 360:
+        backgroundHue -= 360
 
     if beatInformation['silence']:
         rotationAcceleration -= 2
@@ -501,7 +510,13 @@ def drawFrame( beatInformation, dt ):
 
         if beatInformation['beatNumber']%16 == 0:
             rotationDirection *= -1
+
         if beatInformation['beatNumber']%4 == 0:
+
+            backgroundHue += random.randint(0,180)
+            if backgroundHue >= 360:
+                backgroundHue -= 360
+
             s_img_index += 1
             if s_img_index >= len(assets):
                 s_img_index = 0
@@ -545,7 +560,14 @@ def drawFrame( beatInformation, dt ):
     #pos2 = (-size*1/5, centerY)
     #pos3 = (screen.get_width()-size*4/5, centerY)
 
-    screen.blit(element, pos1)
+    backgroundColor = pygame.Color(0,0,0)
+    backgroundBrightness = 20+p*30
+    if beatInformation['silence']:
+        backgroundBrightness = 20
+    backgroundColor.hsva = (backgroundHue, 50, backgroundBrightness, 100)
+    screen.fill( backgroundColor )
+
+    screen.blit(element, pos1, special_flags=pygame.BLEND_ADD)
     screen.blit(element, pos2, special_flags=pygame.BLEND_ADD)
     screen.blit(element, pos3, special_flags=pygame.BLEND_ADD)
     screen.blit(element, pos4, special_flags=pygame.BLEND_ADD)
@@ -581,7 +603,6 @@ volumeBuffer = np.zeros(options['fps']*10) # 10 seconds worth of frames
 volumeBufferIndex = 0
 globalVolume = 0
 globalAverageVolume = 0
-globalVolumeDisplaySmoothing = 0.7
 volumePercentMeasurement = 1
 
 fps = options['fps']
@@ -624,8 +645,6 @@ while running:
                 debugDisplay['peaks'] = not debugDisplay['peaks']
             elif event.key == pygame.K_v:
                 verbose = not verbose
-
-    screen.fill( "black" )
 
     beatInformation = getBeatInformation()
 
