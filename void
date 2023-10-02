@@ -103,16 +103,13 @@ assets = []
 for imageFile in imageFiles:
     path = options['imagePath']+imageFile
 
-    #image = pygame.image.load(path).convert_alpha() # this is full transparency, but makes everything slow
-
-    # this just makes black transparent, but is much faster:
     image = pygame.image.load(path).convert()
-    image.set_colorkey("black")
 
     w = 420
     h = image.get_width()/image.get_height()*w
-
     image = pygame.transform.scale(image, (w, h))
+
+    image.set_colorkey("black")
 
     assets.append(image)
 
@@ -446,11 +443,14 @@ def getBeatInformation():
 s_img_index = 0
 y_offset = 0
 x_offset = 0
+rotation = 0
 
 
 def drawFrame( beatInformation, dt ):
 
-    global s_img_index
+    global s_img_index, rotation
+
+    rotation += dt*50
 
     p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
 
@@ -462,12 +462,6 @@ def drawFrame( beatInformation, dt ):
 
         if False:
             screen.fill( "red" )
-
-    if False:
-        x = int(options['screenWidth']/2)
-        y = int(options['screenHeight']/2)
-        r = int( (1-p)*(options['screenHeight']*0.4) )
-        pygame.draw.circle(screen, "white", (x,y), r)
 
     s_img = assets[s_img_index]
 
@@ -481,9 +475,21 @@ def drawFrame( beatInformation, dt ):
 
         rect = s_img.get_rect(center=(x,y))
 
-        angle = p*90+(i*90)
+        angle = rotation
+        if xI == 0 and yI == 0:
+            angle *= -1
+        if xI == 1 and yI == 1:
+            angle *= -1
 
-        r_img, r_rect = rotate(s_img, rect, angle)
+        if yI == 1:
+            s2_img = pygame.transform.flip(s_img, False, True)
+        else:
+            s2_img = s_img
+
+        if xI == 0:
+            s2_img = pygame.transform.flip(s2_img, True, False)
+
+        r_img, r_rect = rotate(s2_img, rect, angle)
 
         screen.blit(r_img, r_rect)
 
