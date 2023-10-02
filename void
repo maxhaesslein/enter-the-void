@@ -39,7 +39,7 @@ options = {
     'imagePath': 'assets/',
     'imageExtension': 'png',
 
-    'imageWidth': 340, # TODO: check, how large we can go without loosing framerate
+    'imageWidth': 400, # TODO: check, how large we can go without loosing framerate
 
 }
 
@@ -107,11 +107,18 @@ for imageFile in imageFiles:
 
     image = pygame.image.load(path).convert()
 
+    # images should be square!!
+
     w = options['imageWidth']
     h = image.get_width()/image.get_height()*w
+
+    if w != h:
+        print('[WARNING] assets should be square!')
+        #h = w
+
     image = pygame.transform.scale(image, (w, h))
 
-    image.set_colorkey("black")
+    #image.set_colorkey("black") # TODO: maybe don't use colorkey, but multiply on blit
 
     assets.append(image)
 
@@ -452,8 +459,6 @@ def drawFrame( beatInformation, dt ):
 
     global s_img_index, rotation
 
-    rotation += dt*50
-
     p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
 
     if beatInformation['beat'] and not beatInformation['silence']:
@@ -466,6 +471,31 @@ def drawFrame( beatInformation, dt ):
             screen.fill( "red" )
 
     s_img = assets[s_img_index]
+
+
+    rotation += dt*50
+
+    if False:
+        # left top part:
+        rect = s_img.get_rect()
+        lt_img, lt_rect = rotate(s_img, rect, rotation)
+
+        left_img = pygame.Surface((s_img.get_width(), s_img.get_height()*2))
+
+        left_img.fill("blue") # DEBUG
+
+        left_img.blit(lt_img, (0,0), special_flags=pygame.BLEND_ADD)
+
+        lb_img = pygame.transform.flip(lt_img, False, True)
+        left_img.blit(lt_img, (0,s_img.get_height()), special_flags=pygame.BLEND_ADD)
+
+        left_rect = left_img.get_rect()
+
+        screen.blit(left_img, left_rect)
+
+
+        return # DEBUG: ignore everthing below
+
 
     if True:
 
@@ -494,7 +524,7 @@ def drawFrame( beatInformation, dt ):
             if xI == 0:
                 r2_img = pygame.transform.flip(r2_img, True, False)
 
-            screen.blit(r2_img, rect)
+            screen.blit(r2_img, rect, special_flags=pygame.BLEND_ADD)
 
             xI += 1
 
@@ -557,11 +587,11 @@ def rotate(image, rect, angle):
     rect = new_image.get_rect(center=rect.center)
     return new_image, rect
 
-def rotatePivoted(im, angle, pivot):
-    image = pygame.transform.rotate(im, angle)
-    rect = image.get_rect()
-    rect.center = pivot
-    return image, rect
+#def rotatePivoted(im, angle, pivot):
+#    image = pygame.transform.rotate(im, angle)
+#    rect = image.get_rect()
+#    rect.center = pivot
+#    return image, rect
 
 
 
