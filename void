@@ -105,7 +105,7 @@ for imageFile in imageFiles:
 
     image = pygame.image.load(path).convert()
 
-    w = 420
+    w = 340
     h = image.get_width()/image.get_height()*w
     image = pygame.transform.scale(image, (w, h))
 
@@ -465,43 +465,87 @@ def drawFrame( beatInformation, dt ):
 
     s_img = assets[s_img_index]
 
-    xI = 0
-    yI = 0
+    if True:
 
-    for i in range(4):
+        # rotate first, then loop over positions
 
-        x = screen.get_width()/2 +  xI * screen.get_width()/5 - s_img.get_width()/2
-        y = screen.get_height()/2 + yI * screen.get_height()/3 - s_img.get_height()/2
-
+        x = screen.get_width()/2
+        y = screen.get_height()/2
         rect = s_img.get_rect(center=(x,y))
+        r_img, r_rect = rotate(s_img, rect, rotation)
 
-        angle = rotation
-        if xI == 0 and yI == 0:
-            angle *= -1
-        if xI == 1 and yI == 1:
-            angle *= -1
+        xI = 0
+        yI = 0
 
-        if yI == 1:
-            s2_img = pygame.transform.flip(s_img, False, True)
-        else:
-            s2_img = s_img
+        for i in range(4):
 
-        if xI == 0:
-            s2_img = pygame.transform.flip(s2_img, True, False)
+            x = screen.get_width()/2 +  xI * screen.get_width()/5 - r_img.get_width()/2
+            y = screen.get_height()/2 + yI * screen.get_height()/3 - r_img.get_height()/2
 
-        r_img, r_rect = rotate(s2_img, rect, angle)
+            rect = s_img.get_rect(center=(x,y))
 
-        screen.blit(r_img, r_rect)
+            r2_img = r_img
+
+            if yI == 1:
+                r2_img = pygame.transform.flip(r2_img, False, True)
+
+            if xI == 0:
+                r2_img = pygame.transform.flip(r2_img, True, False)
+
+            screen.blit(r2_img, rect)
+
+            xI += 1
+
+            if yI >= 1 and xI >= 2:
+                xI = 0
+
+            if xI >= 2:
+                xI = 1
+                yI += 1
+
+    else:
+
+        # rotate while looping
+
+        s_img = assets[s_img_index]
+
+        xI = 0
+        yI = 0
+
+        for i in range(4):
+
+            x = screen.get_width()/2 +  xI * screen.get_width()/5 - s_img.get_width()/2
+            y = screen.get_height()/2 + yI * screen.get_height()/3 - s_img.get_height()/2
+
+            rect = s_img.get_rect(center=(x,y))
+
+            angle = rotation
+            if xI == 0 and yI == 0:
+                angle *= -1
+            if xI == 1 and yI == 1:
+                angle *= -1
+
+            if yI == 1:
+                s2_img = pygame.transform.flip(s_img, False, True)
+            else:
+                s2_img = s_img
+
+            if xI == 0:
+                s2_img = pygame.transform.flip(s2_img, True, False)
+
+            r_img, r_rect = rotate(s2_img, rect, angle)
+
+            screen.blit(r_img, r_rect)
 
 
-        xI += 1
+            xI += 1
 
-        if yI >= 1 and xI >= 2:
-            xI = 0
+            if yI >= 1 and xI >= 2:
+                xI = 0
 
-        if xI >= 2:
-            xI = 1
-            yI += 1
+            if xI >= 2:
+                xI = 1
+                yI += 1
 
 
 def rotate(image, rect, angle):
