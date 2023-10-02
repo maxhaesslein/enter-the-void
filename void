@@ -451,26 +451,26 @@ s_img_index = 0
 y_offset = 0
 x_offset = 0
 rotation = 0
+rotationDirection = 1
 
 
 def drawFrame( beatInformation, dt ):
 
-    global s_img_index, rotation
+    global s_img_index, rotation, rotationDirection
 
     p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
 
     if beatInformation['beat'] and not beatInformation['silence']:
-
-        s_img_index += 1
-        if s_img_index >= len(assets):
-            s_img_index = 0
-
-        if False:
-            screen.fill( "red" )
+        if beatInformation['beatNumber']%8 == 0:
+            rotationDirection *= -1
+        if beatInformation['beatNumber']%2 == 0:
+            s_img_index += 1
+            if s_img_index >= len(assets):
+                s_img_index = 0
 
     s_img = assets[s_img_index]
 
-    rotation += dt*50
+    rotation += dt*50*rotationDirection
 
     rect = s_img.get_rect()
     lt_img, lt_rect = rotate(s_img, rect, rotation)
@@ -518,6 +518,7 @@ def rotate(image, rect, angle):
 
 targetTime = 1./options['fps']
 frameNumber = 0
+beatNumber = 0
 bpm = -1
 framesPerInterval = -1
 framesUntilNextBeat = -1
@@ -535,16 +536,12 @@ volumePercentMeasurement = 1
 fps = options['fps']
 fpsDisplay = options['fps']
 
-
 verbose = False
 
 audioProcessor = AudioProcessor()
 
-
 running = True
 dt = 0
-
-player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2) # DEBUG
 
 # main loop
 while running:
@@ -580,6 +577,11 @@ while running:
     screen.fill( "black" )
 
     beatInformation = getBeatInformation()
+
+    if beatInformation['beat'] and not beatInformation['silence']:
+        beatNumber += 1
+
+    beatInformation['beatNumber'] = beatNumber
 
     drawFrame( beatInformation, dt )
     drawDebugDisplay( beatInformation )
