@@ -288,23 +288,23 @@ def drawDebugDisplay( beatInformation ):
         screen.blit(textRender, textPosition)
 
     # bpm debug text
-    textY = int(screen.get_height()/5)
+    textY = 0
     if debugDisplay['bpm']:
         text = str(round(beatInformation['bpm']))+' bpm'
         textColor = "blue"
-        if beatInformation['beat']:
+        if beatInformation['beat'] and not beatInformation['silence']:
             textColor = "red"
         textRender = font.render( text, True, textColor )
         textX = int((screen.get_width()-textRender.get_width())/2)
         textPosition = (textX, textY)
         screen.blit(textRender, textPosition)
-        textY += textRender.get_height()+40
+        textY += textRender.get_height()+10
 
     # fpi debug text
     if debugDisplay['interval']:
         text = str(round(beatInformation['framesPerInterval']))+' frames per interval'
         textColor = "blue"
-        if beatInformation['beat']:
+        if beatInformation['beat'] and not beatInformation['silence']:
             textColor = "red"
         textRender = font.render( text, True, textColor )
         textX = int((screen.get_width()-textRender.get_width())/2)
@@ -474,26 +474,41 @@ s_img_index = 0
 y_offset = 0
 x_offset = 0
 rotation = 0
+rotationAcceleration = 0
 rotationDirection = 1
 
 
 def drawFrame( beatInformation, dt ):
 
-    global s_img_index, rotation, rotationDirection
+    global s_img_index, rotation, rotationDirection, rotationAcceleration
 
     p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
 
+    rotationAcceleration -= 0.05
+
+    if beatInformation['silence']:
+        rotationAcceleration -= 2
+
+    if rotationAcceleration < 0:
+        rotationAcceleration = 0
+
     if beatInformation['beat'] and not beatInformation['silence']:
-        if beatInformation['beatNumber']%8 == 0:
+
+        rotationAcceleration += 20
+
+        if rotationAcceleration > 100:
+            rotationAcceleration = 100
+
+        if beatInformation['beatNumber']%16 == 0:
             rotationDirection *= -1
-        if beatInformation['beatNumber']%2 == 0:
+        if beatInformation['beatNumber']%4 == 0:
             s_img_index += 1
             if s_img_index >= len(assets):
                 s_img_index = 0
 
     s_img = assets[s_img_index]
 
-    rotation += dt*50*rotationDirection
+    rotation += dt*rotationAcceleration*rotationDirection
 
     rect = s_img.get_rect()
     lt_img, lt_rect = rotate(s_img, rect, rotation)
