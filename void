@@ -39,6 +39,8 @@ options = {
     'imagePath': 'assets/',
     'imageExtension': 'png',
 
+    'imageWidth': 340, # TODO: check, how large we can go without loosing framerate
+
 }
 
 debugDisplay = {
@@ -105,7 +107,7 @@ for imageFile in imageFiles:
 
     image = pygame.image.load(path).convert()
 
-    w = 340
+    w = options['imageWidth']
     h = image.get_width()/image.get_height()*w
     image = pygame.transform.scale(image, (w, h))
 
