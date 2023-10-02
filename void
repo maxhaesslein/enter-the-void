@@ -260,14 +260,14 @@ def drawDebugDisplay( beatInformation ):
     # audioProcessor fps debug text
     if debugDisplay['audioFps']:
         text = str(math.ceil(audioProcessor.getFps()))+' audio fps'
-        textRender = font.render( text, True, "white" )
+        textRender = font.render( text, True, "blue" )
         textPosition = (screen.get_width()-textRender.get_width(), textY)
         screen.blit(textRender, textPosition)
 
     # frame count debug text
     if debugDisplay['frameCount']:
         text = 'frame #'+str(beatInformation['frameNumber'])+' / next beat at #'+str(int(beatInformation['frameNumber']+beatInformation['framesUntilNextBeat']))
-        textRender = font.render( text, True, "white" )
+        textRender = font.render( text, True, "blue" )
         textPosition = (0, screen.get_height()-textRender.get_height())
         screen.blit(textRender, textPosition)
 
@@ -275,7 +275,7 @@ def drawDebugDisplay( beatInformation ):
     textY = int(screen.get_height()/5)
     if debugDisplay['bpm']:
         text = str(round(beatInformation['bpm']))+' bpm'
-        textColor = "white"
+        textColor = "blue"
         if beatInformation['beat']:
             textColor = "red"
         textRender = font.render( text, True, textColor )
@@ -287,7 +287,7 @@ def drawDebugDisplay( beatInformation ):
     # fpi debug text
     if debugDisplay['interval']:
         text = str(round(beatInformation['framesPerInterval']))+' frames per interval'
-        textColor = "white"
+        textColor = "blue"
         if beatInformation['beat']:
             textColor = "red"
         textRender = font.render( text, True, textColor )
@@ -301,7 +301,7 @@ def drawDebugDisplay( beatInformation ):
     w = int(screen.get_width() - x*2)
     h = 30
     if debugDisplay['progress']:
-        color = "white"
+        color = "blue"
         if beatInformation['lateBeat']:
             color = "red"
         filledWidth = round((1-(beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']))*w)
@@ -321,11 +321,11 @@ def drawDebugDisplay( beatInformation ):
     if debugDisplay['pitch']:
 
         filledWidth = int((beatInformation['pitch'])*w/100)
-        pygame.draw.rect(screen, "white", (x,y,w,h), True)
-        pygame.draw.rect(screen, "white", (x,y,filledWidth,h), False)
+        pygame.draw.rect(screen, "blue", (x,y,w,h), True)
+        pygame.draw.rect(screen, "blue", (x,y,filledWidth,h), False)
 
         text = 'pitch'
-        textRender = font.render( text, True, "white" )
+        textRender = font.render( text, True, "blue" )
         textX = int(x-textRender.get_width()-10)
         textY = int(y+h/2-textRender.get_height()/2)
         textPosition = (textX, textY)
@@ -335,7 +335,7 @@ def drawDebugDisplay( beatInformation ):
 
     # print Volume
     if debugDisplay['volume']:
-        color = "white"
+        color = "blue"
         if beatInformation['silence']:
             color = "red"
         midW= int(w/2)
@@ -360,7 +360,7 @@ def drawDebugDisplay( beatInformation ):
         pygame.draw.rect(screen, color, (x+silenceMarker,y,2,h), True)
 
         text = 'volume'
-        textRender = font.render( text, True, "white" )
+        textRender = font.render( text, True, "blue" )
         textX = int(x-textRender.get_width()-10)
         textY = int(y+h/2-textRender.get_height()/2)
         textPosition = (textX, textY)
@@ -386,7 +386,7 @@ def drawDebugDisplay( beatInformation ):
             if o:
                 pygame.draw.rect(screen, "red", (x,y-200,4,200), False)
 
-            pygame.draw.rect(screen, "white", (x,y-y2,w,h), False)
+            pygame.draw.rect(screen, "blue", (x,y-y2,w,h), False)
 
             x += w
 
