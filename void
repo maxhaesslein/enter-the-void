@@ -510,6 +510,9 @@ backgroundHue = random.randint(0,360)
 
 def drawFrame( beatInformation, dt ):
 
+    # TODO: change direction randomly
+    # TODO: make size and number of elements depended on variable, change randomly
+
     global s_img_index, rotation, rotationDirection, rotationAcceleration, backgroundHue
 
     p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
@@ -589,11 +592,11 @@ def drawFrame( beatInformation, dt ):
 
     centerY = round((screen.get_height()-size)/2)
 
-    if beatInformation['bpm'] > 150:
+    if beatInformation['bpm'] > 150 and not beatInformation['silence']:
         speed = 4
-    elif beatInformation['bpm'] > 130:
+    elif beatInformation['bpm'] > 130 and not beatInformation['silence']:
         speed = 3
-    elif beatInformation['bpm'] > 110:
+    elif beatInformation['bpm'] > 110 and not beatInformation['silence']:
         speed = 2
     else:
         speed = 1
