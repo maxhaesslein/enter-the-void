@@ -269,46 +269,61 @@ def drawDebugDisplay( beatInformation ):
             textColor = "yellow"
         textRender = font.render( text, True, textColor )
         textPosition = (screen.get_width()-textRender.get_width(), textY)
-        screen.blit(textRender, textPosition)
+        textSurface = pygame.Surface(textRender.get_size())
+        textSurface.fill("black")
+        textSurface.blit(textRender, (0, 0))
+        screen.blit(textSurface, textPosition)
         textY += textRender.get_height()+10
 
     # audioProcessor fps debug text
     if debugDisplay['audioFps']:
         text = str(math.ceil(audioProcessor.getFps()))+' audio fps'
-        textRender = font.render( text, True, "blue" )
+        textRender = font.render( text, True, "white" )
         textPosition = (screen.get_width()-textRender.get_width(), textY)
-        screen.blit(textRender, textPosition)
+        textSurface = pygame.Surface(textRender.get_size())
+        textSurface.fill("black")
+        textSurface.blit(textRender, (0, 0))
+        screen.blit(textSurface, textPosition)
 
     # frame count debug text
     if debugDisplay['frameCount']:
         text = 'frame #'+str(beatInformation['frameNumber'])+' / next beat at #'+str(int(beatInformation['frameNumber']+beatInformation['framesUntilNextBeat']))
-        textRender = font.render( text, True, "blue" )
+        textRender = font.render( text, True, "white" )
         textPosition = (0, screen.get_height()-textRender.get_height())
-        screen.blit(textRender, textPosition)
+        textSurface = pygame.Surface(textRender.get_size())
+        textSurface.fill("black")
+        textSurface.blit(textRender, (0, 0))
+        screen.blit(textSurface, textPosition)
 
     # bpm debug text
     textY = 0
     if debugDisplay['bpm']:
         text = str(round(beatInformation['bpm']))+' bpm'
-        textColor = "blue"
+        textColor = "white"
         if beatInformation['beat'] and not beatInformation['silence']:
             textColor = "red"
         textRender = font.render( text, True, textColor )
         textX = int((screen.get_width()-textRender.get_width())/2)
         textPosition = (textX, textY)
-        screen.blit(textRender, textPosition)
+        textSurface = pygame.Surface(textRender.get_size())
+        textSurface.fill("black")
+        textSurface.blit(textRender, (0, 0))
+        screen.blit(textSurface, textPosition)
         textY += textRender.get_height()+10
 
     # fpi debug text
     if debugDisplay['interval']:
         text = str(round(beatInformation['framesPerInterval']))+' frames per interval'
-        textColor = "blue"
+        textColor = "white"
         if beatInformation['beat'] and not beatInformation['silence']:
             textColor = "red"
         textRender = font.render( text, True, textColor )
         textX = int((screen.get_width()-textRender.get_width())/2)
         textPosition = (textX, textY)
-        screen.blit(textRender, textPosition)
+        textSurface = pygame.Surface(textRender.get_size())
+        textSurface.fill("black")
+        textSurface.blit(textRender, (0, 0))
+        screen.blit(textSurface, textPosition)
 
     # print progress bar until next beat
     y = int(screen.get_height() * 2/3)
@@ -316,19 +331,21 @@ def drawDebugDisplay( beatInformation ):
     w = int(screen.get_width() - x*2)
     h = 30
     if debugDisplay['progress']:
-        color = "blue"
+        color = "white"
         if beatInformation['lateBeat']:
             color = "red"
         filledWidth = round((1-(beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']))*w)
-        pygame.draw.rect(screen, color, (x,y,w,h), True)
-        pygame.draw.rect(screen, color, (x,y,filledWidth,h), False)
 
         text = 'next beat'
         textRender = font.render( text, True, color )
-        textX = int(x-textRender.get_width()-10)
-        textY = int(y+h/2-textRender.get_height()/2)
-        textPosition = (textX, textY)
-        screen.blit(textRender, textPosition)
+        textY = int(h/2-textRender.get_height()/2)
+
+        elementSurface = pygame.Surface((textRender.get_width()+10+w, h))
+        elementSurface.fill("black")
+        pygame.draw.rect(elementSurface, color, (textRender.get_width()+10,0,w,h), True)
+        pygame.draw.rect(elementSurface, color, (textRender.get_width()+10,0,filledWidth,h), False)
+        elementSurface.blit(textRender, (0, textY))
+        screen.blit(elementSurface, (x-textRender.get_width()-10, y))
 
         y += h + 20
 
@@ -336,43 +353,51 @@ def drawDebugDisplay( beatInformation ):
     if debugDisplay['pitch']:
 
         filledWidth = int((beatInformation['pitch'])*w/100)
-        pygame.draw.rect(screen, "blue", (x,y,w,h), True)
-        pygame.draw.rect(screen, "blue", (x,y,filledWidth,h), False)
+        pygame.draw.rect(screen, "white", (x,y,w,h), True)
+        pygame.draw.rect(screen, "white", (x,y,filledWidth,h), False)
 
         text = 'pitch'
-        textRender = font.render( text, True, "blue" )
-        textX = int(x-textRender.get_width()-10)
-        textY = int(y+h/2-textRender.get_height()/2)
-        textPosition = (textX, textY)
-        screen.blit(textRender, textPosition)
+        textRender = font.render( text, True, "white" )
+        textY = int(h/2-textRender.get_height()/2)
+
+        elementSurface = pygame.Surface((textRender.get_width()+10+w, h))
+        elementSurface.fill("black")
+        pygame.draw.rect(elementSurface, "white", (textRender.get_width()+10,0,w,h), True)
+        pygame.draw.rect(elementSurface, "white", (textRender.get_width()+10,0,filledWidth,h), False)
+        elementSurface.blit(textRender, (0, textY))
+        screen.blit(elementSurface, (x-textRender.get_width()-10, y))
 
         y += h + 20
 
     # print Volume
     if debugDisplay['volume']:
-        color = "blue"
+
+        text = 'volume'
+        textRender = font.render( text, True, "white" )
+        textY = int(h/2-textRender.get_height()/2)
+
+        midW = int(w/2)
+
+        color = "white"
         if beatInformation['silence']:
             color = "red"
-        midW= int(w/2)
-        scale = 4
         silenceMarker = round(w/2*options['silenceThreshold'])
         filledWidth = int(midW*(beatInformation['volumePercent']-1))
+        if filledWidth > w/2:
+            filledWidth = w/2
 
-        filledX = x
+        filledX = 0
         if filledWidth < 0:
             filledX += filledWidth
             filledWidth *= -1
 
-        pygame.draw.rect(screen, color, (filledX+midW,y,filledWidth,h), False)
-        pygame.draw.rect(screen, color, (x,y,w,h), True)
-        pygame.draw.rect(screen, color, (x+silenceMarker,y,2,h), True)
-
-        text = 'volume'
-        textRender = font.render( text, True, "blue" )
-        textX = int(x-textRender.get_width()-10)
-        textY = int(y+h/2-textRender.get_height()/2)
-        textPosition = (textX, textY)
-        screen.blit(textRender, textPosition)
+        elementSurface = pygame.Surface((textRender.get_width()+10+w, h))
+        elementSurface.fill("black")
+        pygame.draw.rect(elementSurface, color, (textRender.get_width()+10+filledX+midW,0,filledWidth,h), False)
+        pygame.draw.rect(elementSurface, color, (textRender.get_width()+10,0,w,h), True)
+        pygame.draw.rect(elementSurface, color, (textRender.get_width()+10+silenceMarker,0,2,h), True)
+        elementSurface.blit(textRender, (0, textY))
+        screen.blit(elementSurface, (x-textRender.get_width()-10, y))
 
     # print peaks
     if debugDisplay['peaks']:
@@ -394,7 +419,7 @@ def drawDebugDisplay( beatInformation ):
             if o:
                 pygame.draw.rect(screen, "red", (x,y-200,4,200), False)
 
-            pygame.draw.rect(screen, "blue", (x,y-y2,w,h), False)
+            pygame.draw.rect(screen, "white", (x,y-y2,w,h), False)
 
             x += w
 
