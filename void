@@ -564,7 +564,15 @@ def drawFrame( beatInformation, dt ):
 
     centerY = round((screen.get_height()-size)/2)
 
-    speed = 4
+    if beatInformation['bpm'] > 150:
+        speed = 4
+    elif beatInformation['bpm'] > 130:
+        speed = 3
+    elif beatInformation['bpm'] > 110:
+        speed = 2
+    else:
+        speed = 1
+
     posX = int(beatInformation['frameNumber']%(screen.get_width()/(7*speed))*speed)
     posX *= rotationDirection
 
