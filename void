@@ -539,7 +539,7 @@ def drawFrame( beatInformation, dt ):
         if beatInformation['beatNumber']%32 == 0:
             rotationDirection *= -1
 
-        if beatInformation['beatNumber']%4 == 0:
+        if beatInformation['beatNumber']%64 == 0:
 
             backgroundHue += random.randint(0,180)
             if backgroundHue >= 360:
@@ -592,11 +592,11 @@ def drawFrame( beatInformation, dt ):
 
     centerY = round((screen.get_height()-size)/2)
 
-    if beatInformation['bpm'] > 150 and not beatInformation['silence']:
+    if beatInformation['bpm'] >= 150:
         speed = 4
-    elif beatInformation['bpm'] > 130 and not beatInformation['silence']:
+    elif beatInformation['bpm'] >= 130:
         speed = 3
-    elif beatInformation['bpm'] > 110 and not beatInformation['silence']:
+    elif beatInformation['bpm'] >= 110:
         speed = 2
     else:
         speed = 1
