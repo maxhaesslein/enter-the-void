@@ -23,7 +23,7 @@ options = {
 	'screenWidth': 1280,
 	'screenHeight': 720,
 
-	'fps': 120, # 30,
+	'fps': 60, # 30,
 
     'bufferSize': 512,
     'winSizeMultiple': 2, # 2 or 4
@@ -518,6 +518,7 @@ left_img = pygame.Surface((s_img.get_width(), size))
 element = pygame.Surface((size,size))
 elementSlice = pygame.Surface((size,size))
 elementSliceColor = pygame.Surface((size,size))
+screenSlice = pygame.Surface((size,screen.get_height()))
 
 def drawFrame( beatInformation, dt ):
 
@@ -612,28 +613,18 @@ def drawFrame( beatInformation, dt ):
     if rotationDirection > 0:
         posX -= int(screen.get_width()*2/5)
 
-    screen.fill(backgroundColor)
+    screenSlice.fill(backgroundColor)
 
-    screen.blit(elementSliceColor, (posX,centerY-size*2/3))
-    screen.blit(elementSliceColor, (posX+size,centerY-size*2/3))
-    screen.blit(elementSliceColor, (posX+size*2,centerY-size*2/3))
-    screen.blit(elementSliceColor, (posX+size*3,centerY-size*2/3))
-    screen.blit(elementSliceColor, (posX+size*4,centerY-size*2/3))
-    screen.blit(elementSliceColor, (posX+size*5,centerY-size*2/3))
+    # TODO: re-add posX, for movement
 
-    screen.blit(elementSliceColor, (posX,centerY+size*2/3))
-    screen.blit(elementSliceColor, (posX+size,centerY+size*2/3))
-    screen.blit(elementSliceColor, (posX+size*2,centerY+size*2/3))
-    screen.blit(elementSliceColor, (posX+size*3,centerY+size*2/3))
-    screen.blit(elementSliceColor, (posX+size*4,centerY+size*2/3))
-    screen.blit(elementSliceColor, (posX+size*5,centerY+size*2/3))
+    screenSlice.blit(elementSliceColor, (0,centerY-size*2/3))
+    screenSlice.blit(elementSliceColor, (0,centerY+size*2/3))
+    screenSlice.blit(elementSlice, (0,centerY), special_flags=pygame.BLEND_ADD)
 
-    screen.blit(elementSlice, (posX,centerY), special_flags=pygame.BLEND_ADD)
-    screen.blit(elementSlice, (posX+size,centerY), special_flags=pygame.BLEND_ADD)
-    screen.blit(elementSlice, (posX+size*2,centerY), special_flags=pygame.BLEND_ADD)
-    screen.blit(elementSlice, (posX+size*3,centerY), special_flags=pygame.BLEND_ADD)
-    screen.blit(elementSlice, (posX+size*4,centerY), special_flags=pygame.BLEND_ADD)
-    screen.blit(elementSlice, (posX+size*5,centerY), special_flags=pygame.BLEND_ADD)
+    screen.blit(screenSlice, (0,0))
+    screen.blit(screenSlice, (size,0))
+    screen.blit(screenSlice, (size*2,0))
+    screen.blit(screenSlice, (size*3,0))
 
 
 def rotate(image, rect, angle):
