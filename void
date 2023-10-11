@@ -631,28 +631,6 @@ def drawFrame( beatInformation, dt ):
     screen.blit(elementSlice, (posX+size*4,centerY), special_flags=pygame.BLEND_ADD)
     screen.blit(elementSlice, (posX+size*5,centerY), special_flags=pygame.BLEND_ADD)
 
-    return # DEBUG: ignore the following lines
-
-    centerY = screen.get_height()/2-size/2
-
-    #pos1 = (screen.get_width()/2-size/2, centerY)
-    #pos2 = (-size*1/5, centerY)
-    #pos3 = (screen.get_width()-size*4/5, centerY)
-
-    pos1 = (posX, centerY)
-    pos2 = (posX+screen.get_width()*1/3, centerY)
-    pos3 = (posX+screen.get_width()*2/3, centerY)
-    pos4 = (posX+screen.get_width(), centerY)
-    pos5 = (posX+screen.get_width()*4/3, centerY)
-
-    screen.fill( backgroundColor )
-
-    screen.blit(element, pos1, special_flags=pygame.BLEND_ADD)
-    screen.blit(element, pos2, special_flags=pygame.BLEND_ADD)
-    screen.blit(element, pos3, special_flags=pygame.BLEND_ADD)
-    screen.blit(element, pos4, special_flags=pygame.BLEND_ADD)
-    screen.blit(element, pos5, special_flags=pygame.BLEND_ADD)
-
 
 def rotate(image, rect, angle):
     # Rotate the original image without modifying it.
@@ -660,12 +638,6 @@ def rotate(image, rect, angle):
     # Get a new rect with the center of the old rect.
     rect = new_image.get_rect(center=rect.center)
     return new_image, rect
-
-#def rotatePivoted(im, angle, pivot):
-#    image = pygame.transform.rotate(im, angle)
-#    rect = image.get_rect()
-#    rect.center = pivot
-#    return image, rect
 
 
 
