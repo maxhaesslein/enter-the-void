@@ -23,7 +23,7 @@ options = {
 	'screenWidth': 1280,
 	'screenHeight': 720,
 
-	'fps': 30,
+	'fps': 120, # 30,
 
     'bufferSize': 512,
     'winSizeMultiple': 2, # 2 or 4
@@ -47,7 +47,7 @@ options = {
 
 debugDisplay = {
     'frameCount': False,
-    'fps': False,
+    'fps': True, #False,
     'audioFps': False,
     'bpm': False,
     'interval': False,
@@ -500,7 +500,7 @@ def getBeatInformation():
 
 
 
-s_img_index = 0
+s_img_index = random.randint(0,len(assets)-1)
 y_offset = 0
 x_offset = 0
 rotation = 0
@@ -508,13 +508,20 @@ rotationAcceleration = 50
 rotationDirection = 1
 backgroundHue = random.randint(0,360)
 
+s_img = assets[s_img_index]
+
+# TODO: change direction randomly
+# TODO: make size and number of elements depended on variable, change randomly
+# TODO: this needs to reset, when we change the number of displayed elements
+size = math.floor(s_img.get_height()*1.5)
+left_img = pygame.Surface((s_img.get_width(), size))
+element = pygame.Surface((size,size))
+elementSlice = pygame.Surface((size,size))
+elementSliceColor = pygame.Surface((size,size))
 
 def drawFrame( beatInformation, dt ):
 
-    # TODO: change direction randomly
-    # TODO: make size and number of elements depended on variable, change randomly
-
-    global s_img_index, rotation, rotationDirection, rotationAcceleration, backgroundHue
+    global s_img_index, rotation, rotationDirection, rotationAcceleration, backgroundHue, left_img, element, elementSlice, elementSliceColor
 
     p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
 
@@ -557,16 +564,14 @@ def drawFrame( beatInformation, dt ):
     rect = s_img.get_rect()
     lt_img, lt_rect = rotate(s_img, rect, rotation)
 
-    size = math.floor(s_img.get_height()*1.5)
-
-    left_img = pygame.Surface((s_img.get_width(), size))
+    left_img.fill("black")
     left_img.blit(lt_img, lt_rect)
 
     lb_img = pygame.transform.flip(lt_img, False, True)
     lb_rect = lb_img.get_rect(center=(s_img.get_width()/2,s_img.get_height()))
     left_img.blit(lb_img, lb_rect, special_flags=pygame.BLEND_ADD)
 
-    element = pygame.Surface((size,size))
+    element.fill("black")
     element.blit(left_img, (0,0))
 
     right_img = pygame.transform.flip(left_img, True, False)
@@ -580,14 +585,12 @@ def drawFrame( beatInformation, dt ):
         backgroundSaturation = 50
     backgroundColor.hsva = (backgroundHue, backgroundSaturation, 50, 100)
 
-    elementSlice = pygame.Surface((size,size))
     elementSlice.fill("black")
 
     elementSlice.blit(element, (0,0), special_flags=pygame.BLEND_ADD)
     elementSlice.blit(element, (-size/2,0), special_flags=pygame.BLEND_ADD)
     elementSlice.blit(element, (size/2,0), special_flags=pygame.BLEND_ADD)
 
-    elementSliceColor = pygame.Surface((size,size))
     elementSliceColor.fill(backgroundColor)
     elementSliceColor.blit(elementSlice, (0,0), special_flags=pygame.BLEND_ADD)
 
