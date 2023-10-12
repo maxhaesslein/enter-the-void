@@ -42,7 +42,7 @@ options = {
     'imageExtension': 'png',
 
     #'imageWidth': 180,
-    'imageWidth': 280,
+    'imageWidth': 240,
 
 }
 
@@ -512,9 +512,10 @@ source_rect = source_img.get_rect()
 
 source_img_size = source_img.get_width() # TODO: currently, we assume all assets are square and the same size
 
-min_spacing = 1.2
-max_spacing = 1.6
-spacing = max_spacing
+spacingMin = 1.2
+spacingMax = 1.6
+spacing = spacingMin
+spacingDirection = 1
 
 size = math.ceil(math.sqrt( math.pow(source_img_size, 2) + math.pow(source_img_size, 2) ))
 left_img = pygame.Surface((size, size*spacing))
@@ -527,7 +528,7 @@ def drawFrame( beatInformation, dt ):
 
     global rotation, rotationAcceleration, rotationDirection
     global backgroundHue
-    global size, spacing
+    global spacing, spacingDirection
     global source_img_index, source_img, source_rect
     global left_img, element
     #global elementSlice, screenSlice
@@ -546,20 +547,18 @@ def drawFrame( beatInformation, dt ):
     if rotationAcceleration < 0:
         rotationAcceleration = 0
 
+    spacing += 0.1*dt*spacingDirection
+    if spacing < spacingMin or spacing > spacingMax:
+        spacingDirection *= -1
+    left_img = pygame.Surface((size, size*spacing))
+    element = pygame.Surface((size*spacing,size*spacing))
+
     if beatInformation['beat'] and not beatInformation['silence']:
 
         rotationAcceleration += 20
 
         if rotationAcceleration > 100:
             rotationAcceleration = 100
-
-        if beatInformation['beatNumber']%1 == 0:
-            spacing -= 0.04
-            if spacing < min_spacing:
-                spacing = max_spacing
-            size = math.ceil(math.sqrt( math.pow(source_img_size, 2) + math.pow(source_img_size, 2) ))
-            left_img = pygame.Surface((size, size*spacing))
-            element = pygame.Surface((size*spacing,size*spacing))
 
         if beatInformation['beatNumber']%32 == 0:
             rotationDirection *= -1
