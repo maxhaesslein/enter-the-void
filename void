@@ -115,13 +115,7 @@ for imageFile in imageFiles:
 
     image = pygame.transform.smoothscale(image, (w, h))
 
-    size = math.ceil(math.sqrt( math.pow(w, 2) + math.pow(h, 2) ))
-
-    surface = pygame.Surface((size, size)) # add space around the image, so we have enough padding to rotate the image
-
-    surface.blit( image, (int((size-w)/2), int((size-h)/2)) )
-
-    assets.append(surface)
+    assets.append(image)
 
 
 if options['verbose']:
@@ -500,28 +494,37 @@ def getBeatInformation():
 
 
 
-s_img_index = random.randint(0,len(assets)-1)
-y_offset = 0
-x_offset = 0
+# TODO: change direction randomly
+# TODO: change spacing randomly
+# TODO: change size randomly
+
 rotation = 0
 rotationAcceleration = 50
 rotationDirection = 1
+
+spacing = 2
+
 backgroundHue = random.randint(0,360)
 
-s_img = assets[s_img_index]
+source_img_index = random.randint(0,len(assets)-1)
+source_img = assets[source_img_index]
+source_rect = source_img.get_rect()
 
-# TODO: change direction randomly
-# TODO: make size and number of elements depended on variable, change randomly
-# TODO: this needs to reset, when we change the number of displayed elements
-size = math.floor(s_img.get_height()*1.5)
-left_img = pygame.Surface((s_img.get_width(), size))
+size = math.floor(source_img.get_height()*spacing)
+left_img = pygame.Surface((source_img.get_width(), size))
 element = pygame.Surface((size,size))
+
 elementSlice = pygame.Surface((size,size))
 screenSlice = pygame.Surface((size,screen.get_height()))
 
 def drawFrame( beatInformation, dt ):
 
-    global s_img, s_img_index, rotation, rotationDirection, rotationAcceleration, backgroundHue, left_img, element, elementSlice, size, screenSlice
+    global rotation, rotationAcceleration, rotationDirection
+    global backgroundHue
+    global size, spacing
+    global source_img_index, source_img, source_rect
+    global size, left_img, element
+    global elementSlice, screenSlice
 
     p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
 
@@ -553,13 +556,16 @@ def drawFrame( beatInformation, dt ):
             if backgroundHue >= 360:
                 backgroundHue -= 360
 
-            s_img_index += 1
-            if s_img_index >= len(assets):
-                s_img_index = 0
+            source_img_index += 1
+            if source_img_index >= len(assets):
+                source_img_index = 0
 
-            s_img = assets[s_img_index]
+            source_img = assets[source_img_index]
+            # TODO: update size & surface sizes; or assume, that alle assets have the same size
+
 
     rotation += dt*rotationAcceleration*rotationDirection
+
 
     backgroundColor = pygame.Color(0,0,0)
     backgroundSaturation = 50+p*30
@@ -568,8 +574,8 @@ def drawFrame( beatInformation, dt ):
     backgroundColor.hsva = (backgroundHue, backgroundSaturation, 50, 100)
 
 
-    rect = s_img.get_rect()
-    lt_img, lt_rect = rotate(s_img, rect, rotation)
+    lt_img = pygame.transform.rotate(source_img, rotation)
+    lt_rect = lt_img.get_rect(center=source_rect.center)
 
 
     left_img.fill("black")
@@ -577,48 +583,34 @@ def drawFrame( beatInformation, dt ):
 
 
     lb_img = pygame.transform.flip(lt_img, False, True)
-    lb_rect = lb_img.get_rect(center=(s_img.get_width()/2,s_img.get_height()))
+    lb_rect = lb_img.get_rect(center=(source_img.get_width()/2,size/2))
     left_img.blit(lb_img, lb_rect, special_flags=pygame.BLEND_ADD)
 
 
     right_img = pygame.transform.flip(left_img, True, False)
-    right_rect = right_img.get_rect(center=(size*2/3,size/2))
 
 
     element.fill("black")
-    #element.blit(left_img, (0,0))
-    #element.blit(right_img, right_rect, special_flags=pygame.BLEND_ADD)
-    element.blits( ( (left_img, (0,0)), (right_img, right_rect, None, pygame.BLEND_ADD) ) )
+    element.blits( ( (left_img, (0,0)), (right_img, (element.get_width()/2,0), None, pygame.BLEND_ADD) ) )
+
+
+    # --------------------- DEBUG
+    screen.blit( element, (screen.get_width()/2-size/2,screen.get_height()/2-size/2) ) # DEBUG
+    return # DEBUG
+    # --------------------- DEBUG
 
 
     elementSlice.fill("black")
-    #elementSlice.blit(element, (0,0))
-    #elementSlice.blit(element, (-size/2,0), special_flags=pygame.BLEND_ADD)
-    #elementSlice.blit(element, (size/2,0), special_flags=pygame.BLEND_ADD)
     elementSlice.blits( ( (element, (0,0)), (element, (-size/2,0), None, pygame.BLEND_ADD), (element, (size/2,0), None, pygame.BLEND_ADD) ) )
 
 
     centerY = round((screen.get_height()-size)/2)
     screenSlice.fill(backgroundColor)
-    #screenSlice.blit(elementSlice, (0,centerY-size*2/3), special_flags=pygame.BLEND_ADD)
-    #screenSlice.blit(elementSlice, (0,centerY+size*2/3), special_flags=pygame.BLEND_ADD)
-    #screenSlice.blit(elementSlice, (0,centerY), special_flags=pygame.BLEND_ADD)
     screenSlice.blits( ( (elementSlice, (0,centerY-size*2/3), None, pygame.BLEND_ADD), (elementSlice, (0,centerY+size*2/3), None, pygame.BLEND_ADD), (elementSlice, (0,centerY), None, pygame.BLEND_ADD) ) )
 
 
-    #screen.blit(screenSlice, (0,0))
-    #screen.blit(screenSlice, (size,0))
-    #screen.blit(screenSlice, (size*2,0))
-    #screen.blit(screenSlice, (size*3,0))
     screen.blits( ( (screenSlice, (0,0)), (screenSlice, (size,0)), (screenSlice, (size*2,0)) , (screenSlice, (size*3,0)) ) )
 
-
-def rotate(image, rect, angle):
-    # Rotate the original image without modifying it.
-    new_image = pygame.transform.rotate(image, angle)
-    # Get a new rect with the center of the old rect.
-    rect = new_image.get_rect(center=rect.center)
-    return new_image, rect
 
 
 targetTime = 1./options['fps']
