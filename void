@@ -41,8 +41,7 @@ options = {
     'imagePath': 'assets/',
     'imageExtension': 'png',
 
-    #'imageWidth': 180,
-    'imageWidth': 240,
+    'imageWidth': 180,
 
 }
 
@@ -513,16 +512,14 @@ source_rect = source_img.get_rect()
 source_img_size = source_img.get_width() # TODO: currently, we assume all assets are square and the same size
 
 spacingMin = 1.2
-spacingMax = 1.6
+spacingMax = 1.8
 spacing = spacingMin
 spacingDirection = 1
 
 size = math.ceil(math.sqrt( math.pow(source_img_size, 2) + math.pow(source_img_size, 2) ))
 left_img = pygame.Surface((size, size*spacing))
 element = pygame.Surface((size*spacing,size*spacing))
-
-#elementSlice = pygame.Surface((size*spacing,size*spacing))
-#screenSlice = pygame.Surface((size*spacing,screen.get_height()))
+elementLine = pygame.Surface((screen.get_width(),math.ceil(size*spacingMax)))
 
 def drawFrame( beatInformation, dt ):
 
@@ -530,8 +527,8 @@ def drawFrame( beatInformation, dt ):
     global backgroundHue
     global spacing, spacingDirection
     global source_img_index, source_img, source_rect
-    global left_img, element
-    #global elementSlice, screenSlice
+    global left_img, element, elementSlice
+    global elementLine
 
     p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
 
@@ -608,22 +605,14 @@ def drawFrame( beatInformation, dt ):
     element.blits( ( (left_img, (0,0)), (right_img, (size*spacing-size,0), None, pygame.BLEND_ADD) ) )
 
 
-    # --------------------- DEBUG
-    screen.blit( element, (screen.get_width()/2-size*spacing/2,screen.get_height()/2-size*spacing/2) ) # DEBUG
-    return # DEBUG
-    # --------------------- DEBUG
+    centerX = screen.get_width()/2-size*spacing/2
+    centerY = round((screen.get_height()-size*spacing)/2)
 
+    elementLine.fill("black")
+    elementLine.blits( ( (element, (centerX,0), None, pygame.BLEND_ADD), (element, (centerX-size*1.1,0), None, pygame.BLEND_ADD), (element, (centerX+size*1.1,0), None, pygame.BLEND_ADD), (element, (centerX-size*2.2,0), None, pygame.BLEND_ADD), (element, (centerX+size*2.2,0), None, pygame.BLEND_ADD) ) )
 
-    #elementSlice.fill("black")
-    #elementSlice.blits( ( (element, (0,0)), (element, (-size/2,0), None, pygame.BLEND_ADD), (element, (size/2,0), None, pygame.BLEND_ADD) ) )
-
-
-    #centerY = round((screen.get_height()-size)/2)
-    #screenSlice.fill(backgroundColor)
-    #screenSlice.blits( ( (elementSlice, (0,centerY-size*2/3), None, pygame.BLEND_ADD), (elementSlice, (0,centerY+size*2/3), None, pygame.BLEND_ADD), (elementSlice, (0,centerY), None, pygame.BLEND_ADD) ) )
-
-
-    #screen.blits( ( (screenSlice, (0,0)), (screenSlice, (size,0)), (screenSlice, (size*2,0)) , (screenSlice, (size*3,0)) ) )
+    screen.fill(backgroundColor)
+    screen.blits( ( (elementLine, (0,centerY), None, pygame.BLEND_ADD), (elementLine, (0,centerY-size*1.1), None, pygame.BLEND_ADD), (elementLine, (0,centerY+size*1.1), None, pygame.BLEND_ADD) ) )
 
 
 
