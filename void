@@ -20,10 +20,12 @@ import random
 
 
 options = {
-	'screenWidth': 1280,
-	'screenHeight': 720,
+	#'screenWidth': 1280,
+	#'screenHeight': 720,
+	'screenWidth': 1024,
+	'screenHeight': 768,
 
-	'fps': 60, # 30,
+	'fps': 30, # 60,
 
     'bufferSize': 512,
     'winSizeMultiple': 2, # 2 or 4
@@ -41,7 +43,9 @@ options = {
     'imagePath': 'assets/',
     'imageExtension': 'png',
 
-    'imageWidth': 180,
+    'imageWidth': 220,
+    'spacingMin' : 1.3,
+    'spacingMax' : 1.8,
 
 }
 
@@ -511,15 +515,13 @@ source_rect = source_img.get_rect()
 
 source_img_size = source_img.get_width() # TODO: currently, we assume all assets are square and the same size
 
-spacingMin = 1.2
-spacingMax = 1.8
-spacing = spacingMin
+spacing = options['spacingMin']
 spacingDirection = 1
 
 size = math.ceil(math.sqrt( math.pow(source_img_size, 2) + math.pow(source_img_size, 2) ))
 left_img = pygame.Surface((size, size*spacing))
 element = pygame.Surface((size*spacing,size*spacing))
-elementLine = pygame.Surface((screen.get_width(),math.ceil(size*spacingMax)))
+elementLine = pygame.Surface((screen.get_width(),math.ceil(size*options['spacingMax'])))
 
 def drawFrame( beatInformation, dt ):
 
@@ -544,8 +546,17 @@ def drawFrame( beatInformation, dt ):
     if rotationAcceleration < 0:
         rotationAcceleration = 0
 
-    spacing += 0.1*dt*spacingDirection
-    if spacing < spacingMin or spacing > spacingMax:
+    if bpm > 140:
+        spacingFactor = 0.4
+    elif bpm > 130:
+        spacingFactor = 0.3
+    elif bpm > 120:
+        spacingFactor = 0.2
+    else:
+        spacingFactor = 0.1
+
+    spacing += spacingFactor*dt*spacingDirection
+    if spacing < options['spacingMin'] or spacing > options['spacingMax']:
         spacingDirection *= -1
     left_img = pygame.Surface((size, size*spacing))
     element = pygame.Surface((size*spacing,size*spacing))
@@ -603,7 +614,6 @@ def drawFrame( beatInformation, dt ):
     element.fill("black")
     element.blit( left_img, (0,0) )
     element.blits( ( (left_img, (0,0)), (right_img, (size*spacing-size,0), None, pygame.BLEND_ADD) ) )
-
 
     centerX = screen.get_width()/2-size*spacing/2
     centerY = round((screen.get_height()-size*spacing)/2)
