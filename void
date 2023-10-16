@@ -615,11 +615,11 @@ def drawFrame( beatInformation, dt ):
             if rotationAcceleration > 100:
                 rotationAcceleration = 100
 
-            if beatInformation['beatNumber']%32 == 16:
+            if beatInformation['beatNumber']%16 == 8:
 
                 rotationDirection *= -1
 
-        if beatInformation['beatNumber']%32 == 16:
+        if beatInformation['beatNumber']%16 == 8:
 
             backgroundHue += random.randint(0,180)
             if backgroundHue >= 360:
@@ -631,7 +631,7 @@ def drawFrame( beatInformation, dt ):
             # TODO: update size & surface sizes; or assume, that alle assets have the same size
 
 
-        if beatInformation['beatNumber']%64 == 0:
+        if beatInformation['beatNumber']%8 == 0:
 
             if random.randint(0,10) > 3:
                 effects['spacing'] = True
