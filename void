@@ -44,8 +44,6 @@ options = {
     'imageExtension': 'png',
 
     'imageWidth': 220,
-    'spacingMin' : 1.3,
-    'spacingMax' : 1.8,
 
     'overlayFramesMax': 7,
 
@@ -538,14 +536,16 @@ source_rect = source_img.get_rect()
 
 source_img_size = source_img.get_width() # TODO: currently, we assume all assets are square and the same size
 
-spacing = options['spacingMin']
+spacingMin = 1.1
+spacingMax = 1.9
+spacing = spacingMin
 spacingAcceleration = 20
 spacingDirection = 1
 
 size = math.ceil(math.sqrt( math.pow(source_img_size, 2) + math.pow(source_img_size, 2) ))
 left_img = pygame.Surface((size, size*spacing))
 element = pygame.Surface((size*spacing,size*spacing))
-elementLine = pygame.Surface((screen.get_width(),math.ceil(size*options['spacingMax'])))
+elementLine = pygame.Surface((screen.get_width(),math.ceil(size*2)))
 
 overlayFrames = 0
 overlayElement = pygame.Surface((screen.get_width(),screen.get_height()))
@@ -599,11 +599,11 @@ def drawFrame( beatInformation, dt ):
 
     if beatInformation['beat'] and not beatInformation['silence']:
 
-        if spacing < options['spacingMin']:
+        if spacing < spacingMin:
             print('spacing Direction change to 1')
             spacingAcceleration *= 0.8
             spacingDirection = 1
-        elif spacing >= options['spacingMax']:
+        elif spacing >= spacingMax:
             print('spacing Direction change to -1')
             spacingAcceleration *= 0.8
             spacingDirection = -1
