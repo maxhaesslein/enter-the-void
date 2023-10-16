@@ -1,6 +1,6 @@
 #!/bin/bash
 
 export DISPLAY=:0.0
-startx $HOME/enter-the-void/void
-#startx $HOME/enter-the-void/void 2>&1 | tee $HOME/enter-the-void/void.log
+#startx $HOME/enter-the-void/void
+startx $HOME/enter-the-void/void 2>&1 | tee $HOME/enter-the-void/void.log
 

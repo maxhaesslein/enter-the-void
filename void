@@ -123,13 +123,13 @@ for imageFile in imageFiles:
     if int(w) != int(h):
         print('[WARNING] assets should be square')
 
-    image = pygame.transform.smoothscale(image, (w, w))
-
     maxHeight = screen.get_height()*0.8
     imageBig = pygame.transform.smoothscale(image, (maxHeight, maxHeight))
+    assetsBig.append(imageBig)
+
+    image = pygame.transform.smoothscale(image, (w, w))
 
     assets.append(image)
-    assetsBig.append(imageBig)
 
 
 if options['verbose']:
