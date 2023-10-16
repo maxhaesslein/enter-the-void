@@ -47,11 +47,13 @@ options = {
     'spacingMin' : 1.3,
     'spacingMax' : 1.8,
 
+    'overlayFramesMax': 7,
+
 }
 
 debugDisplay = {
     'frameCount': False,
-    'fps': True, #False,
+    'fps': False,
     'audioFps': False,
     'bpm': False,
     'interval': False,
@@ -108,6 +110,7 @@ audioOptions = {
 imageFiles = [f for f in os.listdir(options['imagePath']) if os.path.isfile(os.path.join(options['imagePath'], f)) and f.lower().endswith(options['imageExtension'])]
 
 assets = []
+assetsBig = []
 
 for imageFile in imageFiles:
     path = options['imagePath']+imageFile
@@ -117,9 +120,16 @@ for imageFile in imageFiles:
     w = options['imageWidth']
     h = image.get_width()/image.get_height()*w
 
-    image = pygame.transform.smoothscale(image, (w, h))
+    if int(w) != int(h):
+        print('[WARNING] assets should be square')
+
+    image = pygame.transform.smoothscale(image, (w, w))
+
+    maxHeight = screen.get_height()*0.8
+    imageBig = pygame.transform.smoothscale(image, (maxHeight, maxHeight))
 
     assets.append(image)
+    assetsBig.append(imageBig)
 
 
 if options['verbose']:
@@ -523,6 +533,9 @@ left_img = pygame.Surface((size, size*spacing))
 element = pygame.Surface((size*spacing,size*spacing))
 elementLine = pygame.Surface((screen.get_width(),math.ceil(size*options['spacingMax'])))
 
+overlayFrames = 0
+overlayElement = pygame.Surface((screen.get_width(),screen.get_height()))
+
 def drawFrame( beatInformation, dt ):
 
     global rotation, rotationAcceleration, rotationDirection
@@ -531,6 +544,7 @@ def drawFrame( beatInformation, dt ):
     global source_img_index, source_img, source_rect
     global left_img, element, elementSlice
     global elementLine
+    global overlayFrames, overlayElement
 
     p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
 
@@ -568,18 +582,18 @@ def drawFrame( beatInformation, dt ):
         if rotationAcceleration > 100:
             rotationAcceleration = 100
 
-        if beatInformation['beatNumber']%32 == 0:
-            rotationDirection *= -1
+        if beatInformation['beatNumber']%2 == 0:
+            overlayFrames = options['overlayFramesMax']
 
-        if beatInformation['beatNumber']%64 == 0:
+        if beatInformation['beatNumber']%32 == 16: #%64 == 0:
+
+            rotationDirection *= -1
 
             backgroundHue += random.randint(0,180)
             if backgroundHue >= 360:
                 backgroundHue -= 360
 
-            source_img_index += 1
-            if source_img_index >= len(assets):
-                source_img_index = 0
+            source_img_index = random.randint(0,len(assets)-1)
 
             source_img = assets[source_img_index]
             # TODO: update size & surface sizes; or assume, that alle assets have the same size
@@ -589,10 +603,12 @@ def drawFrame( beatInformation, dt ):
 
 
     backgroundColor = pygame.Color(0,0,0)
-    backgroundSaturation = 50+p*30
+    backgroundSaturation = 50+p*50
+    backgroundLightness = 20+p*50
     if beatInformation['silence']:
         backgroundSaturation = 50
-    backgroundColor.hsva = (backgroundHue, backgroundSaturation, 50, 100)
+        backgroundLightness = 20
+    backgroundColor.hsva = (backgroundHue, backgroundSaturation, backgroundLightness, 100)
 
 
     lt_img = pygame.transform.rotate(source_img, rotation)
@@ -623,6 +639,16 @@ def drawFrame( beatInformation, dt ):
 
     screen.fill(backgroundColor)
     screen.blits( ( (elementLine, (0,centerY), None, pygame.BLEND_ADD), (elementLine, (0,centerY-size*1.1), None, pygame.BLEND_ADD), (elementLine, (0,centerY+size*1.1), None, pygame.BLEND_ADD) ) )
+
+    if overlayFrames > 0:
+        overlayFrames -= 1
+
+        imageBig = assetsBig[source_img_index]
+        percent = overlayFrames/options['overlayFramesMax']
+        overlayElement.fill("black")
+        overlayElement.blit( imageBig, ((screen.get_width()-imageBig.get_width())/2,(screen.get_height()-imageBig.get_height())/2) )
+        overlayElement.set_alpha(percent*255)
+        screen.blit( overlayElement, (0,0) )
 
 
 
