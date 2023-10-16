@@ -570,8 +570,13 @@ def drawFrame( beatInformation, dt ):
         spacingFactor = 0.1
 
     spacing += spacingFactor*dt*spacingDirection
-    if spacing < options['spacingMin'] or spacing > options['spacingMax']:
-        spacingDirection *= -1
+    if spacing < options['spacingMin']:
+        spacing = options['spacingMin']
+        spacingDirection = 1
+    elif spacing >= options['spacingMax']:
+        spacing = options['spacingMax']
+        spacingDirection = -1
+
     left_img = pygame.Surface((size, size*spacing))
     element = pygame.Surface((size*spacing,size*spacing))
 
