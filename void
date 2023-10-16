@@ -539,7 +539,7 @@ source_rect = source_img.get_rect()
 source_img_size = source_img.get_width() # TODO: currently, we assume all assets are square and the same size
 
 spacing = options['spacingMin']
-spacingAcceleration = 50
+spacingAcceleration = 20
 spacingDirection = 1
 
 size = math.ceil(math.sqrt( math.pow(source_img_size, 2) + math.pow(source_img_size, 2) ))
@@ -567,60 +567,46 @@ def drawFrame( beatInformation, dt ):
     global overlayFrames, overlayElement
     global effects
 
+
     p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
+
 
     backgroundHue += 1
     if backgroundHue >= 360:
         backgroundHue -= 360
 
+
     rotationAcceleration -= 0.05
 
     if beatInformation['silence'] or not effects['rotation']:
         rotationAcceleration -= 2
-        spacingAcceleration -= 4
 
     if rotationAcceleration < 0:
         rotationAcceleration = 0
 
-    spacingAcceleration -= 0.5
+
+    spacingAcceleration -= 0.01
+
+    if beatInformation['silence'] or not effects['spacing']:
+        spacingAcceleration -= 0.7
 
     if spacingAcceleration < 0:
         spacingAcceleration = 0
-
-    print(spacingAcceleration)
-
-    if effects['spacing']:
-
-        maxAcceleration = 5
-
-        if bpm > 140:
-            spacingAcceleration += maxAcceleration*1
-        elif bpm > 130:
-            spacingAcceleration += maxAcceleration*0.9
-        elif bpm > 120:
-            spacingAcceleration += maxAcceleration*0.8
-        else:
-            spacingAcceleration += maxAcceleration*0.7
-
-    if spacingAcceleration > 50:
-        spacingAcceleration = 50
-
-    spacing += dt*(spacingAcceleration/50)*spacingDirection
-
-    if spacing < options['spacingMin']:
-        spacing = options['spacingMin']
-        spacingAcceleration *= 0.8
-        spacingDirection = 1
-    elif spacing >= options['spacingMax']:
-        spacing = options['spacingMax']
-        spacingDirection = -1
-        spacingAcceleration *= 0.8
 
 
     left_img = pygame.Surface((size, size*spacing))
     element = pygame.Surface((size*spacing,size*spacing))
 
     if beatInformation['beat'] and not beatInformation['silence']:
+
+        if spacing < options['spacingMin']:
+            print('spacing Direction change to 1')
+            spacingAcceleration *= 0.8
+            spacingDirection = 1
+        elif spacing >= options['spacingMax']:
+            print('spacing Direction change to -1')
+            spacingAcceleration *= 0.8
+            spacingDirection = -1
 
 
         if beatInformation['beatNumber']%2 == 0:
@@ -636,6 +622,16 @@ def drawFrame( beatInformation, dt ):
             if beatInformation['beatNumber']%16 == 8:
 
                 rotationDirection *= -1
+
+
+        if effects['spacing']:
+
+            spacingAcceleration += 10
+
+            if spacingAcceleration > 40:
+                spacingAcceleration = 40
+
+
 
         if beatInformation['beatNumber']%16 == 8:
 
@@ -672,13 +668,25 @@ def drawFrame( beatInformation, dt ):
                 effects['rotation'] = False
                 print('change rotation to '+str(effects['rotation']))
 
-            if not effects['rotation'] and not effects['overlay']:
-                effects['spacing'] = True
-                print('force spacing to '+str(effects['spacing']))
+            if not effects['spacing'] and not effects['rotation']:
+                if random.randint(0,1) == 1:
+                    effects['spacing'] = True
+                    print('force spacing to True')
+                else:
+                    effects['rotation'] = True
+                    print('force rotation to True')
 
 
     rotation += dt*rotationAcceleration*rotationDirection
+    spacing += dt*spacingAcceleration/50*spacingDirection
 
+    if spacing < 0:
+        spacing = 0
+        spacingDirection = 1
+
+    if spacing > 2:
+        spacing = 2
+        spacingDirection = -1
 
     backgroundColor = pygame.Color(0,0,0)
     backgroundSaturation = 50+p*50
