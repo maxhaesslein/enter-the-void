@@ -61,6 +61,7 @@ debugDisplay = {
     'pitch': False,
     'volume': False,
     'peaks': False,
+    'effects': False,
 }
 
 
@@ -295,10 +296,23 @@ def drawDebugDisplay( beatInformation ):
         screen.blit(textSurface, textPosition)
 
     # frame count debug text
+    textY = screen.get_height()
     if debugDisplay['frameCount']:
         text = 'frame #'+str(beatInformation['frameNumber'])+' / next beat at #'+str(int(beatInformation['frameNumber']+beatInformation['framesUntilNextBeat']))
         textRender = font.render( text, True, "white" )
-        textPosition = (0, screen.get_height()-textRender.get_height())
+        textY -= textRender.get_height()
+        textPosition = (0, textY)
+        textSurface = pygame.Surface(textRender.get_size())
+        textSurface.fill("black")
+        textSurface.blit(textRender, (0, 0))
+        screen.blit(textSurface, textPosition)
+
+    # print effects
+    if debugDisplay['effects']:
+        text = 'effects: spacing is '+str(effects['spacing'])+' / rotation is '+str(effects['rotation'])+' / overlay is '+str(effects['overlay'])
+        textRender = font.render( text, True, "white" )
+        textY -= textRender.get_height()
+        textPosition = (0, textY)
         textSurface = pygame.Surface(textRender.get_size())
         textSurface.fill("black")
         textSurface.blit(textRender, (0, 0))
@@ -536,6 +550,12 @@ elementLine = pygame.Surface((screen.get_width(),math.ceil(size*options['spacing
 overlayFrames = 0
 overlayElement = pygame.Surface((screen.get_width(),screen.get_height()))
 
+effects = {
+    'spacing': True,
+    'rotation': True,
+    'overlay': False,
+}
+
 def drawFrame( beatInformation, dt ):
 
     global rotation, rotationAcceleration, rotationDirection
@@ -545,6 +565,7 @@ def drawFrame( beatInformation, dt ):
     global left_img, element, elementSlice
     global elementLine
     global overlayFrames, overlayElement
+    global effects
 
     p = beatInformation['framesUntilNextBeat']/beatInformation['framesPerInterval']
 
@@ -560,22 +581,23 @@ def drawFrame( beatInformation, dt ):
     if rotationAcceleration < 0:
         rotationAcceleration = 0
 
-    if bpm > 140:
-        spacingFactor = 0.4
-    elif bpm > 130:
-        spacingFactor = 0.3
-    elif bpm > 120:
-        spacingFactor = 0.2
-    else:
-        spacingFactor = 0.1
+    if effects['spacing']:
+        if bpm > 140:
+            spacingFactor = 0.4
+        elif bpm > 130:
+            spacingFactor = 0.3
+        elif bpm > 120:
+            spacingFactor = 0.2
+        else:
+            spacingFactor = 0.1
 
-    spacing += spacingFactor*dt*spacingDirection
-    if spacing < options['spacingMin']:
-        spacing = options['spacingMin']
-        spacingDirection = 1
-    elif spacing >= options['spacingMax']:
-        spacing = options['spacingMax']
-        spacingDirection = -1
+        spacing += spacingFactor*dt*spacingDirection
+        if spacing < options['spacingMin']:
+            spacing = options['spacingMin']
+            spacingDirection = 1
+        elif spacing >= options['spacingMax']:
+            spacing = options['spacingMax']
+            spacingDirection = -1
 
     left_img = pygame.Surface((size, size*spacing))
     element = pygame.Surface((size*spacing,size*spacing))
@@ -603,8 +625,36 @@ def drawFrame( beatInformation, dt ):
             source_img = assets[source_img_index]
             # TODO: update size & surface sizes; or assume, that alle assets have the same size
 
+        if beatInformation['beatNumber']%8 == 0:
 
-    rotation += dt*rotationAcceleration*rotationDirection
+            if random.randint(0,10) > 3:
+                effects['spacing'] = True
+                print('change spacing to '+str(effects['spacing']))
+            else:
+                effects['spacing'] = False
+                print('change spacing to '+str(effects['spacing']))
+
+            if random.randint(0,10) > 3:
+                effects['overlay'] = True
+                print('change overlay to '+str(effects['overlay']))
+            else:
+                effects['overlay'] = False
+                print('change overlay to '+str(effects['overlay']))
+
+            if random.randint(0,10) > 3:
+                effects['rotation'] = True
+                print('change rotation to '+str(effects['rotation']))
+            else:
+                effects['rotation'] = False
+                print('change rotation to '+str(effects['rotation']))
+
+            if not effects['rotation'] and not effects['overlay']:
+                effects['spacing'] = True
+                print('force spacing to '+str(effects['spacing']))
+
+
+    if effects['rotation']:
+        rotation += dt*rotationAcceleration*rotationDirection
 
 
     backgroundColor = pygame.Color(0,0,0)
@@ -645,7 +695,7 @@ def drawFrame( beatInformation, dt ):
     screen.fill(backgroundColor)
     screen.blits( ( (elementLine, (0,centerY), None, pygame.BLEND_ADD), (elementLine, (0,centerY-size*1.1), None, pygame.BLEND_ADD), (elementLine, (0,centerY+size*1.1), None, pygame.BLEND_ADD) ) )
 
-    if overlayFrames > 0:
+    if overlayFrames > 0 and effects['overlay']:
         overlayFrames -= 1
 
         imageBig = assetsBig[source_img_index]
@@ -711,6 +761,8 @@ while running:
                 debugDisplay['volume'] = not debugDisplay['volume']
             elif event.key == pygame.K_o:
                 debugDisplay['peaks'] = not debugDisplay['peaks']
+            elif event.key == pygame.K_p:
+                debugDisplay['effects'] = not debugDisplay['effects']
             elif event.key == pygame.K_v:
                 verbose = not verbose
 
