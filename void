@@ -549,6 +549,7 @@ elementLine = pygame.Surface((screen.get_width(),math.ceil(size*2)))
 
 overlayFrames = 0
 overlayElement = pygame.Surface((screen.get_width(),screen.get_height()))
+overlayAngle = 0
 
 effects = {
     'spacing': False,
@@ -564,7 +565,7 @@ def drawFrame( beatInformation, dt ):
     global source_img_index, source_img, source_rect
     global left_img, element, elementSlice
     global elementLine
-    global overlayFrames, overlayElement
+    global overlayFrames, overlayElement, overlayAngle
     global effects
 
 
@@ -599,11 +600,11 @@ def drawFrame( beatInformation, dt ):
 
     if beatInformation['beat'] and not beatInformation['silence']:
 
-        if spacing < spacingMin:
+        if spacing < spacingMin and spacingDirection == -1:
             print('spacing Direction change to 1')
             spacingAcceleration *= 0.8
             spacingDirection = 1
-        elif spacing >= spacingMax:
+        elif spacing > spacingMax and spacingDirection == 1:
             print('spacing Direction change to -1')
             spacingAcceleration *= 0.8
             spacingDirection = -1
@@ -611,6 +612,15 @@ def drawFrame( beatInformation, dt ):
 
         if beatInformation['beatNumber']%2 == 0:
             overlayFrames = options['overlayFramesMax']
+
+            randomRotation = random.randint(0,3)
+            overlayAngle = 0
+            if randomRotation == 0:
+                overlayAngle = 90
+            elif randomRotation == 1:
+                overlayAngle = 180
+            elif randomRotation == 2:
+                overlayAngle = 270
 
 
         if effects['rotation']:
@@ -680,11 +690,10 @@ def drawFrame( beatInformation, dt ):
     rotation += dt*rotationAcceleration*rotationDirection
     spacing += dt*spacingAcceleration/50*spacingDirection
 
-    if spacing < 0:
+    if spacing < 0 and spacingDirection == -1:
         spacing = 0
         spacingDirection = 1
-
-    if spacing > 2:
+    elif spacing > 2 and spacingDirection == 1:
         spacing = 2
         spacingDirection = -1
 
@@ -730,6 +739,9 @@ def drawFrame( beatInformation, dt ):
         overlayFrames -= 1
 
         imageBig = assetsBig[source_img_index]
+
+        imageBig = pygame.transform.rotate( imageBig, overlayAngle )
+
         percent = overlayFrames/options['overlayFramesMax']
         overlayElement.fill("black")
         overlayElement.blit( imageBig, ((screen.get_width()-imageBig.get_width())/2,(screen.get_height()-imageBig.get_height())/2) )
