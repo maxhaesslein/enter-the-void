@@ -537,9 +537,9 @@ source_rect = source_img.get_rect()
 source_img_size = source_img.get_width() # TODO: currently, we assume all assets are square and the same size
 
 spacingMin = 1.1
-spacingMax = 1.9
+spacingMax = 2.0
 spacing = spacingMin
-spacingAcceleration = 20
+spacingAcceleration = 40
 spacingDirection = 1
 
 size = math.ceil(math.sqrt( math.pow(source_img_size, 2) + math.pow(source_img_size, 2) ))
@@ -594,9 +594,6 @@ def drawFrame( beatInformation, dt ):
     if spacingAcceleration < 0:
         spacingAcceleration = 0
 
-
-    left_img = pygame.Surface((size, size*spacing))
-    element = pygame.Surface((size*spacing,size*spacing))
 
     if beatInformation['beat'] and not beatInformation['silence']:
 
@@ -657,14 +654,14 @@ def drawFrame( beatInformation, dt ):
 
         if beatInformation['beatNumber']%8 == 0:
 
-            if random.randint(0,10) > 3:
+            if random.randint(0,10) > 5:
                 effects['spacing'] = True
                 print('change spacing to '+str(effects['spacing']))
             else:
                 effects['spacing'] = False
                 print('change spacing to '+str(effects['spacing']))
 
-            if random.randint(0,10) > 3:
+            if random.randint(0,10) > 4:
                 effects['overlay'] = True
                 print('change overlay to '+str(effects['overlay']))
             else:
@@ -690,12 +687,16 @@ def drawFrame( beatInformation, dt ):
     rotation += dt*rotationAcceleration*rotationDirection
     spacing += dt*spacingAcceleration/50*spacingDirection
 
-    if spacing < 0 and spacingDirection == -1:
-        spacing = 0
+    if spacing < 1 and spacingDirection == -1:
+        spacing = 1
         spacingDirection = 1
-    elif spacing > 2 and spacingDirection == 1:
-        spacing = 2
+    elif spacing > 2.1 and spacingDirection == 1:
+        spacing = 2.1
         spacingDirection = -1
+
+
+    left_img = pygame.Surface((size, size*spacing))
+    element = pygame.Surface((size*spacing,size*spacing))
 
     backgroundColor = pygame.Color(0,0,0)
     backgroundSaturation = 50+p*50
