@@ -565,7 +565,7 @@ effects = {
     'rotation': True,
     'overlay': False,
     'single': False,
-    'offset': True,
+    'offset': False,
 }
 
 def drawFrame( beatInformation, dt ):
@@ -664,7 +664,6 @@ def drawFrame( beatInformation, dt ):
             source_img_index = random.randint(0,len(assets)-1)
 
             source_img = assets[source_img_index]
-            # TODO: update size & surface sizes; or assume, that alle assets have the same size
 
 
         if beatInformation['beatNumber']%8 == 0:
