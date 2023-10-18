@@ -63,6 +63,10 @@ debugDisplay = {
 }
 
 
+# make imagePath path relative to current file:
+options['imagePath'] = os.path.join(os.path.dirname(__file__), options['imagePath'])
+
+
 # setup window
 pygame.init()
 screen = pygame.display.set_mode((options['screenWidth'], options['screenHeight']), pygame.FULLSCREEN | pygame.NOFRAME )
