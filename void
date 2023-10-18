@@ -536,8 +536,8 @@ source_rect = source_img.get_rect()
 
 source_img_size = source_img.get_width() # TODO: currently, we assume all assets are square and the same size
 
-spacingMin = 1.1
-spacingMax = 2.0
+spacingMin = 1.2
+spacingMax = 1.9
 spacing = spacingMin
 spacingAcceleration = 40
 spacingDirection = 1
@@ -690,9 +690,11 @@ def drawFrame( beatInformation, dt ):
     if spacing < 1 and spacingDirection == -1:
         spacing = 1
         spacingDirection = 1
+        spacingAcceleration *= 0.6
     elif spacing > 2.1 and spacingDirection == 1:
         spacing = 2.1
         spacingDirection = -1
+        spacingAcceleration *= 0.6
 
 
     left_img = pygame.Surface((size, size*spacing))
