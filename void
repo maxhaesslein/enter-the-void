@@ -592,7 +592,9 @@ def drawFrame( beatInformation, dt ):
     if beatInformation['silence'] or not effects['rotation']:
         rotationAcceleration -= 2
 
-    if rotationAcceleration < 0:
+    if effects['rotation'] and rotationAcceleration < 0.1:
+        rotationAcceleration = 0.1
+    elif rotationAcceleration < 0:
         rotationAcceleration = 0
 
 
@@ -601,7 +603,9 @@ def drawFrame( beatInformation, dt ):
     if beatInformation['silence'] or not effects['spacing']:
         spacingAcceleration -= 0.7
 
-    if spacingAcceleration < 0:
+    if effects['spacing'] and spacingAcceleration < 0.1:
+        spacingAcceleration = 0.1
+    elif spacingAcceleration < 0:
         spacingAcceleration = 0
 
 
