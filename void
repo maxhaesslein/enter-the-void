@@ -553,7 +553,7 @@ spacingDirection = 1
 size = math.ceil(math.sqrt( math.pow(source_img_size, 2) + math.pow(source_img_size, 2) ))
 left_img = pygame.Surface((size, size*spacing))
 element = pygame.Surface((size*spacing,size*spacing))
-elementLine = pygame.Surface((screen.get_width(),math.ceil(size*2)))
+elementLine = pygame.Surface((screen.get_width()+size*1.1,math.ceil(size*2)))
 
 overlayFrames = 0
 overlayElement = pygame.Surface((screen.get_width(),screen.get_height()))
@@ -565,6 +565,7 @@ effects = {
     'rotation': True,
     'overlay': False,
     'single': False,
+    'offset': True,
 }
 
 def drawFrame( beatInformation, dt ):
@@ -668,6 +669,13 @@ def drawFrame( beatInformation, dt ):
 
         if beatInformation['beatNumber']%8 == 0:
 
+            if random.randint(0,10) > 7:
+                effects['offset'] = True
+                print('change offset to '+str(effects['offset']))
+            else:
+                effects['offset'] = False
+                print('change offset to '+str(effects['offset']))
+
             if random.randint(0,10) > 6:
                 effects['single'] = True
                 print('change single to '+str(effects['single']))
@@ -768,11 +776,15 @@ def drawFrame( beatInformation, dt ):
 
     else:
 
+        offset = 0
+        if effects['offset']:
+            offset = -size*1.1/2
+
         elementLine.fill("black")
-        elementLine.blits( ( (element, (centerX,0), None, pygame.BLEND_ADD), (element, (centerX-size*1.1,0), None, pygame.BLEND_ADD), (element, (centerX+size*1.1,0), None, pygame.BLEND_ADD), (element, (centerX-size*2.2,0), None, pygame.BLEND_ADD), (element, (centerX+size*2.2,0), None, pygame.BLEND_ADD) ) )
+        elementLine.blits( ( (element, (centerX,0), None, pygame.BLEND_ADD), (element, (centerX-size*1.1,0), None, pygame.BLEND_ADD), (element, (centerX+size*1.1,0), None, pygame.BLEND_ADD), (element, (centerX-size*2.2,0), None, pygame.BLEND_ADD), (element, (centerX+size*2.2,0), None, pygame.BLEND_ADD), (element, (centerX+size*3.3,0), None, pygame.BLEND_ADD) ) )
 
         screen.fill(backgroundColor)
-        screen.blits( ( (elementLine, (0,centerY), None, pygame.BLEND_ADD), (elementLine, (0,centerY-size*1.1), None, pygame.BLEND_ADD), (elementLine, (0,centerY+size*1.1), None, pygame.BLEND_ADD) ) )
+        screen.blits( ( (elementLine, (0,centerY), None, pygame.BLEND_ADD), (elementLine, (offset,centerY-size*1.1), None, pygame.BLEND_ADD), (elementLine, (offset,centerY+size*1.1), None, pygame.BLEND_ADD) ) )
 
     if overlayFrames > 0 and effects['overlay']:
         overlayFrames -= 1
