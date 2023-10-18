@@ -311,7 +311,11 @@ def drawDebugDisplay( beatInformation ):
 
     # print effects
     if debugDisplay['effects']:
-        text = 'effects: spacing is '+str(effects['spacing'])+' / rotation is '+str(effects['rotation'])+' / overlay is '+str(effects['overlay'])
+        text = ''
+        for effect, value in effects.items():
+            if text != '':
+                text += ' / '
+            text += str(effect)+': '+str(value)
         textRender = font.render( text, True, "white" )
         textY -= textRender.get_height()
         textPosition = (0, textY)
@@ -554,11 +558,13 @@ elementLine = pygame.Surface((screen.get_width(),math.ceil(size*2)))
 overlayFrames = 0
 overlayElement = pygame.Surface((screen.get_width(),screen.get_height()))
 overlayAngle = 0
+overlayElement2 = pygame.Surface((screen.get_width(),screen.get_height()))
 
 effects = {
-    'spacing': False,
+    'spacing': True,
     'rotation': True,
     'overlay': False,
+    'single': False,
 }
 
 def drawFrame( beatInformation, dt ):
@@ -569,7 +575,7 @@ def drawFrame( beatInformation, dt ):
     global source_img_index, source_img, source_rect
     global left_img, element, elementSlice
     global elementLine
-    global overlayFrames, overlayElement, overlayAngle
+    global overlayFrames, overlayElement, overlayAngle, overlayElement2
     global effects
 
 
@@ -658,6 +664,13 @@ def drawFrame( beatInformation, dt ):
 
         if beatInformation['beatNumber']%8 == 0:
 
+            if random.randint(0,10) > 6:
+                effects['single'] = True
+                print('change single to '+str(effects['single']))
+            else:
+                effects['single'] = False
+                print('change single to '+str(effects['single']))
+
             if random.randint(0,10) > 5:
                 effects['spacing'] = True
                 print('change spacing to '+str(effects['spacing']))
@@ -736,11 +749,26 @@ def drawFrame( beatInformation, dt ):
     centerX = screen.get_width()/2-size*spacing/2
     centerY = round((screen.get_height()-size*spacing)/2)
 
-    elementLine.fill("black")
-    elementLine.blits( ( (element, (centerX,0), None, pygame.BLEND_ADD), (element, (centerX-size*1.1,0), None, pygame.BLEND_ADD), (element, (centerX+size*1.1,0), None, pygame.BLEND_ADD), (element, (centerX-size*2.2,0), None, pygame.BLEND_ADD), (element, (centerX+size*2.2,0), None, pygame.BLEND_ADD) ) )
 
-    screen.fill(backgroundColor)
-    screen.blits( ( (elementLine, (0,centerY), None, pygame.BLEND_ADD), (elementLine, (0,centerY-size*1.1), None, pygame.BLEND_ADD), (elementLine, (0,centerY+size*1.1), None, pygame.BLEND_ADD) ) )
+    if effects['single']:
+
+        overlayElement.fill('black')
+        alpha = 0.2-p*0.2
+        overlayElement.set_alpha(alpha*255)
+
+        overlayElement2.blit( overlayElement, (0,0))
+        overlayElement2.blit( element, (centerX,centerY), None, pygame.BLEND_ADD )
+
+        screen.fill(backgroundColor)
+        screen.blit( overlayElement2, (0,0), None, pygame.BLEND_ADD )
+
+    else:
+
+        elementLine.fill("black")
+        elementLine.blits( ( (element, (centerX,0), None, pygame.BLEND_ADD), (element, (centerX-size*1.1,0), None, pygame.BLEND_ADD), (element, (centerX+size*1.1,0), None, pygame.BLEND_ADD), (element, (centerX-size*2.2,0), None, pygame.BLEND_ADD), (element, (centerX+size*2.2,0), None, pygame.BLEND_ADD) ) )
+
+        screen.fill(backgroundColor)
+        screen.blits( ( (elementLine, (0,centerY), None, pygame.BLEND_ADD), (elementLine, (0,centerY-size*1.1), None, pygame.BLEND_ADD), (elementLine, (0,centerY+size*1.1), None, pygame.BLEND_ADD) ) )
 
     if overlayFrames > 0 and effects['overlay']:
         overlayFrames -= 1
