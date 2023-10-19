@@ -1,8 +1,6 @@
 # Enter the Void v.1
 
-Live audioreactive visuals on a Raspberry Pi 4, written in Python3 and OpenCV. Currently a work in progress.
-
-Work in progress. More info soon.
+Live audioreactive visuals on a Raspberry Pi 4. Currently a work in progress, more info soon.
 
 ## Installation
 
