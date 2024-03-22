@@ -1,6 +1,10 @@
 # Enter the Void v.1
 
-Live audioreactive visuals on a Raspberry Pi 4. Currently a work in progress, more info soon.
+Live audioreactive visuals on a Raspberry Pi 4. Currently a work in progress.
+
+See [here](https://www.maxhaesslein.de/visual/objects/enter-the-void/) for a video and additional information.
+
+This is a personal project and may be a bit finicky to set up.
 
 ## Installation
 
